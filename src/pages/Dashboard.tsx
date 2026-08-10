@@ -136,8 +136,8 @@ export function Dashboard({ onDrill }: { onDrill: (q: string) => void }) {
             />
             <Stat
               label="Net"
-              value={formatAmount(now.net)}
-              foot={<Delta value={now.net} />}
+              value={`${now.net < 0 ? '−' : ''}${formatAmount(now.net)}`}
+              foot={<Delta value={now.net} showUnit={false} />}
             />
             <Stat
               label="Per day"
@@ -305,7 +305,7 @@ export function Dashboard({ onDrill }: { onDrill: (q: string) => void }) {
                       </td>
                       <td className="faint">{accountName.get(tx.userAccountId ?? '') ?? '—'}</td>
                       <td
-                        className={`right num ${transfer ? 'faint' : sign > 0 ? 'pos' : ''}`}
+                        className={`right num ${transfer ? 'faint' : sign > 0 ? 'pos' : 'neg'}`}
                       >
                         {sign > 0 ? '+' : '−'}
                         {formatAmount(tx.amount)}

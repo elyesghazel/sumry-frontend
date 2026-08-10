@@ -216,7 +216,11 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
               out <strong className="num neg">{formatAmount(sum.out)}</strong>
             </span>
             <span className="caption">
-              net <strong className="num">{formatAmount(sum.inn - sum.out)}</strong>
+              net{' '}
+              <strong className={`num ${sum.inn - sum.out < 0 ? 'neg' : 'pos'}`}>
+                {sum.inn - sum.out < 0 ? '−' : ''}
+                {formatAmount(sum.inn - sum.out)}
+              </strong>
             </span>
           </span>
         </div>
@@ -277,7 +281,7 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
                       {tx.description ?? '—'}
                     </td>
                     <td className="faint">{accountName.get(tx.userAccountId ?? '') ?? '—'}</td>
-                    <td className={`right num ${transfer ? 'faint' : sign > 0 ? 'pos' : ''}`}>
+                    <td className={`right num ${transfer ? 'faint' : sign > 0 ? 'pos' : 'neg'}`}>
                       {sign > 0 ? '+' : '−'}
                       {formatAmount(tx.amount)}
                     </td>

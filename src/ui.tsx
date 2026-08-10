@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { formatAmount } from './format';
+import { CURRENCY, formatAmount } from './format';
 
 export function Card({
   title,
@@ -52,10 +52,13 @@ export function Delta({
   value,
   suffix,
   invert = false,
+  /** Off only where the surrounding text already names the unit. */
+  showUnit = true,
 }: {
   value: number;
   suffix?: string;
   invert?: boolean;
+  showUnit?: boolean;
 }) {
   const flat = Math.abs(value) < 0.005;
   const up = value > 0;
@@ -66,6 +69,7 @@ export function Delta({
     <span className={`delta ${cls} num`}>
       <span aria-hidden>{flat ? '–' : up ? '↑' : '↓'}</span>
       {formatAmount(value)}
+      {showUnit ? ` ${CURRENCY}` : ''}
       {suffix ? ` ${suffix}` : ''}
     </span>
   );
@@ -80,7 +84,7 @@ export function DeltaPercent({ value, invert = false }: { value: number | null; 
   return (
     <span className={`delta ${cls} num`}>
       <span aria-hidden>{flat ? '–' : up ? '↑' : '↓'}</span>
-      {Math.abs(Math.round(value))}% vs previous
+      {Math.abs(Math.round(value))}% vs prev.
     </span>
   );
 }
