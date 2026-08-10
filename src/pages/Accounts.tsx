@@ -1,14 +1,16 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { cssVar, SERIES, useStore } from '../store';
 import { Card, Delta, Empty, Stat, Swatch } from '../ui';
 import { MultiLine } from '../charts';
 import { CURRENCY, formatAmount, signOf } from '../format';
 import { accountDelta, balanceSeries, inRange, resolveRange, TIMEFRAMES } from '../analytics';
+import { ReconcileEditor } from '../components/Editor';
 
 export function Accounts() {
   const { accounts, transactions, timeframe, setTimeframe } = useStore();
 
   const range = useMemo(() => resolveRange(timeframe), [timeframe]);
+  const [reconciling, setReconciling] = useState<string | null>(null);
 
   const colorFor = (i: number) => cssVar(SERIES[i % SERIES.length]);
 
@@ -130,6 +132,7 @@ export function Accounts() {
                   <th className="right">Out</th>
                   <th className="right">Change</th>
                   <th className="right">Balance</th>
+                  <th className="right"></th>
                 </tr>
               </thead>
               <tbody>
@@ -150,6 +153,15 @@ export function Accounts() {
                         <Delta value={accountDelta(a, transactions, range)} />
                       </td>
                       <td className="right num">{formatAmount(a.currentBalance ?? 0)}</td>
+                      <td className="right">
+                        <button
+                          className="chip"
+                          onClick={() => setReconciling(a.id)}
+                          title="Set the real balance; the difference is booked as a transaction"
+                        >
+                          Adjust
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -158,6 +170,10 @@ export function Accounts() {
           </div>
         </Card>
       </div>
+
+      {reconciling ? (
+        <ReconcileEditor accountId={reconciling} onClose={() => setReconciling(null)} />
+      ) : null}
     </>
   );
 }

@@ -133,6 +133,13 @@ export const api = {
   deleteAccount: (token: string, id: string) =>
     request<void>(`/api/users/accounts/${id}`, { token, method: 'DELETE' }),
 
+  reconcileAccount: (token: string, id: string, newBalance: number, note?: string | null) =>
+    request<Transaction | null>(`/api/users/accounts/reconcile/${id}`, {
+      token,
+      body: { newBalance, note: note ?? null },
+      method: 'PUT',
+    }),
+
   changePassword: (token: string, currentPassword: string, newPassword: string) =>
     request<void>('/api/users/password', {
       token,

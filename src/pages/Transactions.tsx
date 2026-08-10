@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { categoryColor, cssVar, useStore } from '../store';
 import { Card, Empty, Swatch } from '../ui';
+import { TransactionEditor } from '../components/Editor';
+import type { Transaction } from '../api';
 import { formatAmount, isTransfer, signOf } from '../format';
 import { resolveRange, type Timeframe } from '../analytics';
 
@@ -30,6 +32,8 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
   const [period, setPeriod] = useState<Period>('all');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
+  // null = closed; { tx: null } = creating a new one.
+  const [editor, setEditor] = useState<{ tx: Transaction | null } | null>(null);
   const [limit, setLimit] = useState(100);
 
   useEffect(() => setQuery(initialQuery), [initialQuery]);
@@ -189,6 +193,12 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
           >
             Sort: {sort === 'date' ? 'newest' : 'largest'}
           </button>
+
+          <span style={{ flex: 1 }} />
+
+          <button className="btn primary" onClick={() => setEditor({ tx: null })}>
+            + New
+          </button>
         </div>
 
         <div
@@ -231,7 +241,12 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
                 const sign = signOf(tx.kind);
                 const d = new Date(tx.date);
                 return (
-                  <tr key={tx.id}>
+                  <tr
+                    key={tx.id}
+                    onClick={() => setEditor({ tx })}
+                    style={{ cursor: 'pointer' }}
+                    title="Edit"
+                  >
                     <td className="faint" style={{ whiteSpace: 'nowrap' }}>
                       {d.toLocaleDateString(undefined, {
                         day: '2-digit',
@@ -286,6 +301,10 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
           </div>
         ) : null}
       </Card>
+
+      {editor ? (
+        <TransactionEditor editing={editor.tx} onClose={() => setEditor(null)} />
+      ) : null}
     </div>
   );
 }
