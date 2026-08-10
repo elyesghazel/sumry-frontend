@@ -2,8 +2,23 @@ import { useEffect, useMemo, useState } from 'react';
 import { categoryColor, cssVar, useStore } from '../store';
 import { Card, Empty, Swatch } from '../ui';
 import { formatAmount, isTransfer, signOf } from '../format';
+import { resolveRange, type Timeframe } from '../analytics';
 
 type Sort = 'date' | 'amount';
+
+/** Period options for the list. `all` and `custom` sit outside the shared timeframes. */
+type Period = Timeframe | 'all' | 'custom';
+
+const PERIODS: { key: Period; label: string }[] = [
+  { key: 'all', label: 'All time' },
+  { key: 'month', label: 'This month' },
+  { key: '30d', label: 'Last 30 days' },
+  { key: '3m', label: 'Last 3 months' },
+  { key: 'year', label: 'This year' },
+  { key: 'custom', label: 'Custom' },
+];
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 export function Transactions({ initialQuery }: { initialQuery: string }) {
   const { transactions, categories, accounts } = useStore();
@@ -12,6 +27,9 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
   const [account, setAccount] = useState<string>('');
   const [kind, setKind] = useState<'all' | 'in' | 'out' | 'transfer'>('all');
   const [sort, setSort] = useState<Sort>('date');
+  const [period, setPeriod] = useState<Period>('all');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [limit, setLimit] = useState(100);
 
   useEffect(() => setQuery(initialQuery), [initialQuery]);
@@ -25,10 +43,30 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
     [accounts],
   );
 
+  // Resolved once per render rather than per row.
+  const window = useMemo(() => {
+    if (period === 'all') return null;
+    if (period === 'custom') {
+      if (!from && !to) return null;
+      return {
+        // An empty bound means "open ended" on that side.
+        from: from ? new Date(`${from}T00:00:00`) : new Date(0),
+        // The `to` date is inclusive, so run to the end of that day.
+        to: to ? new Date(`${to}T23:59:59.999`) : new Date(8.64e15),
+      };
+    }
+    const r = resolveRange(period);
+    return { from: r.from, to: r.to };
+  }, [period, from, to]);
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const rows = transactions.filter((tx) => {
       if (account && tx.userAccountId !== account) return false;
+      if (window) {
+        const t = new Date(tx.date).getTime();
+        if (t < window.from.getTime() || t > window.to.getTime()) return false;
+      }
       if (kind === 'in' && !(signOf(tx.kind) > 0 && !isTransfer(tx.kind))) return false;
       if (kind === 'out' && !(signOf(tx.kind) < 0 && !isTransfer(tx.kind))) return false;
       if (kind === 'transfer' && !isTransfer(tx.kind)) return false;
@@ -46,7 +84,7 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
         : new Date(b.date).getTime() - new Date(a.date).getTime(),
     );
     return rows;
-  }, [transactions, query, account, kind, sort]);
+  }, [transactions, query, account, kind, sort, window]);
 
   // Totals reflect the current filter, so a filtered view answers "how much is this?".
   const sum = useMemo(() => {
@@ -71,6 +109,49 @@ export function Transactions({ initialQuery }: { initialQuery: string }) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+
+          <div className="chips">
+            {PERIODS.map((p) => (
+              <button
+                key={p.key}
+                className="chip"
+                aria-pressed={period === p.key}
+                onClick={() => {
+                  // Seed the custom range with the current month so it is never empty.
+                  if (p.key === 'custom' && !from && !to) {
+                    const r = resolveRange('month');
+                    setFrom(iso(r.from));
+                    setTo(iso(new Date()));
+                  }
+                  setPeriod(p.key);
+                }}
+              >
+                {p.label}
+              </button>
+            ))}
+          </div>
+
+          {period === 'custom' ? (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                className="input"
+                style={{ width: 160 }}
+                type="date"
+                value={from}
+                max={to || undefined}
+                onChange={(e) => setFrom(e.target.value)}
+              />
+              <span className="faint">→</span>
+              <input
+                className="input"
+                style={{ width: 160 }}
+                type="date"
+                value={to}
+                min={from || undefined}
+                onChange={(e) => setTo(e.target.value)}
+              />
+            </div>
+          ) : null}
 
           <div className="chips">
             {(['all', 'out', 'in', 'transfer'] as const).map((k) => (
