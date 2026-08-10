@@ -1,3 +1,7 @@
+# Explicit project name: this directory is also called "sumry", which would otherwise
+# collide with the API stack at /opt/docker/sumry and let a `down` here stop that one.
+name: sumry-web
+
 services:
   web:
     build:
