@@ -42,7 +42,14 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        style={{ width: '100%', maxWidth: 460, background: 'var(--bg-elevated)' }}
+        style={{
+          width: '100%',
+          maxWidth: 520,
+          background: 'var(--bg-elevated)',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: 'min(88vh, 760px)',
+        }}
       >
         <header className="card-head">
           <h2>{title}</h2>
@@ -50,7 +57,7 @@ export function Modal({
             ✕
           </button>
         </header>
-        {children}
+        <div className="modal-body">{children}</div>
         {footer ? (
           <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>{footer}</div>
         ) : null}
@@ -225,15 +232,34 @@ export function TransactionEditor({
           ))}
         </div>
 
-        <label className="caption">Amount</label>
-        <input
-          className="input num"
-          inputMode="decimal"
-          placeholder="0.00"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          autoFocus
-        />
+        <div className="field-row">
+          <div className="field" style={{ flex: '0 0 130px' }}>
+            <label className="caption" htmlFor="tx-amount">
+              Amount
+            </label>
+            <input
+              id="tx-amount"
+              className="input num lg"
+              inputMode="decimal"
+              placeholder="0.00"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="field grow">
+            <label className="caption" htmlFor="tx-note">
+              Note
+            </label>
+            <input
+              id="tx-note"
+              className="input lg"
+              placeholder="What was it for?"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+        </div>
 
         {mode === 'TRANSFER' ? (
           <>
@@ -293,14 +319,6 @@ export function TransactionEditor({
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-        />
-
-        <label className="caption">Note</label>
-        <input
-          className="input"
-          placeholder="Optional"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
         />
 
         {error ? <div className="neg" style={{ fontSize: 13 }}>{error}</div> : null}
