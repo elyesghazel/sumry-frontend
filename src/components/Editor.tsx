@@ -392,14 +392,33 @@ export function ReconcileEditor({
           {(account?.currentBalance ?? 0).toFixed(2)}
         </div>
 
-        <label className="caption">Real balance</label>
-        <input
-          className="input num"
-          inputMode="decimal"
-          value={target}
-          onChange={(e) => setTarget(e.target.value)}
-          autoFocus
-        />
+        <div className="field-row">
+          <div className="field" style={{ flex: '0 0 130px' }}>
+            <label className="caption" htmlFor="rec-balance">
+              Real balance
+            </label>
+            <input
+              id="rec-balance"
+              className="input num lg"
+              inputMode="decimal"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <div className="field grow">
+            <label className="caption" htmlFor="rec-note">
+              Note
+            </label>
+            <input
+              id="rec-note"
+              className="input lg"
+              placeholder="Abgleich"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          </div>
+        </div>
 
         {Number.isFinite(diff) ? (
           <div style={{ fontSize: 13 }}>
@@ -411,14 +430,6 @@ export function ReconcileEditor({
             {Math.abs(diff) < 0.005 ? <span className="faint"> — nothing to book</span> : null}
           </div>
         ) : null}
-
-        <label className="caption">Note</label>
-        <input
-          className="input"
-          placeholder="Abgleich"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
 
         {error ? <div className="neg" style={{ fontSize: 13 }}>{error}</div> : null}
       </div>
