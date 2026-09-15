@@ -9,17 +9,35 @@ where the money goes, how this period compares to the last one.
 
 ## Design
 
-The colour system is shared with the app, and it does two separate jobs. The UI palette
-is near-monochrome — colour there means one thing, the direction money moved. The
-categorical ramp (`--c1`…`--c8`) identifies chart series and is generated in OKLCH and
-validated: every hue sits in its mode's lightness band, clears the chroma floor, holds
-≥3:1 against its surface, and keeps adjacent pairs separable for normal and
-colour-deficient vision. Light mode has its own steps rather than being a flipped dark
-mode. There are eight hues and they are never cycled to invent a ninth — past the top
-eight, categories fold into a neutral "Other".
+The ledger: paper, ink and hairlines. Figures are set in Fraunces with optical sizing,
+everything else in Inter with tabular numerals. The interface itself is near-monochrome —
+colour means the direction money moved, plus an eight-step earth-tone ramp that identifies
+chart series and is never cycled to invent a ninth. Light is the primary palette; dark is
+its own set, not an inversion, and follows the system unless overridden. Density has two
+steps (comfortable / compact) that change spacing only.
 
 Every chart carries a hover layer, because a plot you can't interrogate is a picture.
-Both themes are available via the sidebar toggle and persist locally.
+
+## What it does
+
+- **Home** — safe to spend before the next planned income, month-end forecast, upcoming
+  items, budgets at a glance, balance and breakdown for the chosen period.
+- **Activity** — the full ledger, filtered and paged on the server with totals for the
+  whole match; every row opens the editor.
+- **Accounts** — balances (with foreign currencies converted), sparklines, transfers,
+  reconciliation ("Adjust" books the difference rather than overwriting).
+- **Budgets** — per-category envelopes with a period, a start day (payday) and rollover;
+  progress shows pace against elapsed time, not just the total.
+- **Plan** — planned transactions (rent, salary, savings transfers) with one-click or
+  automatic booking, savings goals, and subscriptions detected from history.
+- **Insights** — flow Sankey, pace vs previous period, weekday rhythm, daily heatmap,
+  per-category trends, year over year.
+- **Settings** — categorisation rules (with dry-run recategorisation of history),
+  statement import for PostFinance and Revolut CSVs with duplicate detection, CSV/JSON
+  export, the monthly statement, categories, password and sessions.
+- **Quick add** (⌘K) — `12.50 kebab cash yesterday`, `got 300 lohn`,
+  `500 from pf to sparkonto`, `netflix 17.90 #Abos`; parsed live, booked on Enter.
+- Installs as a PWA and accepts shared text into quick add.
 
 ## Running it
 
@@ -44,15 +62,18 @@ blocks every request.
 
 ```
 src/
-  api.ts         typed backend client, same contract as the app
-  store.tsx      session + data + theme, one context
-  analytics.ts   ranges, totals, buckets, breakdowns, balance reconstruction
-  charts.tsx     Recharts wrappers bound to the design tokens
-  ui.tsx         card, stat, delta, bar row
-  styles.css     tokens and layout
-  pages/         dashboard, insights, transactions, accounts, login
+  api.ts             typed backend client, same contract as the app
+  store.tsx          session, preferences, data domains, hash routing, toasts
+  analytics.ts       ranges, totals, buckets, breakdowns, sankey, heatmap, yoy
+  charts.tsx         Recharts wrappers bound to the design tokens
+  ui.tsx             section, stat, animated number, delta, modal, controls
+  styles.css         tokens and layout
+  components/        top bar + quick add, editors
+  pages/             home, activity, accounts, budgets, plan, insights, settings, login
+public/
+  manifest.webmanifest, sw.js   PWA shell (the API is never cached)
 ```
 
-Balance history is reconstructed by undoing transactions backwards from today, because
-the API stores current balances rather than historical ones. Anything before the first
-recorded transaction is unknown, not zero.
+Reports add up in the base currency: each transaction carries the value it had in CHF
+when it was booked. Balance history is reconstructed by undoing transactions backwards
+from today, because the API stores current balances rather than historical ones.

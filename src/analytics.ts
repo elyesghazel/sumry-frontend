@@ -1,5 +1,5 @@
 import type { Account, Transaction } from './api';
-import { isTransfer, signOf, startOfDay } from './format';
+import { baseOf, isTransfer, signOf, startOfDay } from './format';
 
 export type Range = { from: Date; to: Date; label: string; days: number };
 
@@ -76,8 +76,8 @@ export function totals(transactions: Transaction[], range: Range): Totals {
   for (const tx of transactions) {
     if (isTransfer(tx.kind) || !inRange(tx, range)) continue;
     count++;
-    if (signOf(tx.kind) > 0) income += tx.amount;
-    else expense += tx.amount;
+    if (signOf(tx.kind) > 0) income += baseOf(tx);
+    else expense += baseOf(tx);
   }
   return { income, expense, net: income - expense, count };
 }
@@ -144,7 +144,7 @@ export function spendBuckets(transactions: Transaction[], range: Range): Bucket[
   for (const tx of transactions) {
     if (isTransfer(tx.kind) || signOf(tx.kind) > 0 || !inRange(tx, range)) continue;
     const bucket = buckets.get(makeKey(new Date(tx.date)));
-    if (bucket) bucket.value += tx.amount;
+    if (bucket) bucket.value += baseOf(tx);
   }
 
   return [...buckets.values()];
@@ -162,7 +162,7 @@ export function categoryBreakdown(
     if (isTransfer(tx.kind) || signOf(tx.kind) > 0 || !inRange(tx, range)) continue;
     const label = tx.categoryLabel ?? 'Uncategorised';
     const entry = totalsByLabel.get(label) ?? { value: 0, count: 0 };
-    entry.value += tx.amount;
+    entry.value += baseOf(tx);
     entry.count += 1;
     totalsByLabel.set(label, entry);
   }
@@ -198,8 +198,8 @@ export function monthlySeries(transactions: Transaction[], months: number): Mont
     const d = new Date(tx.date);
     const point = index.get(`${d.getFullYear()}-${d.getMonth()}`);
     if (!point) continue;
-    if (signOf(tx.kind) > 0) point.income += tx.amount;
-    else point.expense += tx.amount;
+    if (signOf(tx.kind) > 0) point.income += baseOf(tx);
+    else point.expense += baseOf(tx);
   }
 
   return points;
@@ -218,7 +218,7 @@ export function frequentDescriptions(
     if (!label) continue;
     const entry = map.get(label) ?? { count: 0, total: 0 };
     entry.count += 1;
-    entry.total += tx.amount;
+    entry.total += baseOf(tx);
     map.set(label, entry);
   }
   return [...map.entries()]
@@ -305,4 +305,126 @@ export function balanceSeries(
     running += deltas.get(p.key) ?? 0;
     return { label: p.label, value: running, iso: p.start.toISOString() };
   });
+}
+
+// ------------------------------------------------------------ new views
+
+export type SankeyData = {
+  nodes: { name: string; color?: string }[];
+  links: { source: number; target: number; value: number }[];
+};
+
+/**
+ * Income sources → "Income" → category groups → categories. Small categories fold into
+ * "Other" so the diagram stays readable; a Sankey with forty ribbons says nothing.
+ */
+export function sankeyData(
+  transactions: Transaction[],
+  range: Range,
+  groupOf: (label: string) => string | null,
+  colorOf: (label: string) => string,
+  maxCategories = 10,
+): SankeyData {
+  const income = new Map<string, number>();
+  const expense = new Map<string, number>();
+  for (const tx of transactions) {
+    if (isTransfer(tx.kind) || !inRange(tx, range)) continue;
+    const label = tx.categoryLabel ?? 'Uncategorised';
+    const m = signOf(tx.kind) > 0 ? income : expense;
+    m.set(label, (m.get(label) ?? 0) + baseOf(tx));
+  }
+  const nodes: SankeyData['nodes'] = [];
+  const links: SankeyData['links'] = [];
+  const idx = new Map<string, number>();
+  const node = (name: string, color?: string) => {
+    const key = name;
+    if (idx.has(key)) return idx.get(key)!;
+    nodes.push({ name, color });
+    idx.set(key, nodes.length - 1);
+    return nodes.length - 1;
+  };
+  const hub = node('Income');
+  for (const [label, v] of [...income.entries()].sort((a, b) => b[1] - a[1])) {
+    links.push({ source: node(label, colorOf(label)), target: hub, value: v });
+  }
+  const totalIn = [...income.values()].reduce((s, v) => s + v, 0);
+  const totalOut = [...expense.values()].reduce((s, v) => s + v, 0);
+  const ranked = [...expense.entries()].sort((a, b) => b[1] - a[1]);
+  const kept = ranked.slice(0, maxCategories);
+  const rest = ranked.slice(maxCategories).reduce((s, [, v]) => s + v, 0);
+  const byGroup = new Map<string, number>();
+  for (const [label, v] of kept) {
+    const g = groupOf(label) ?? 'Other';
+    byGroup.set(g, (byGroup.get(g) ?? 0) + v);
+  }
+  if (rest > 0) byGroup.set('Other', (byGroup.get('Other') ?? 0) + rest);
+  for (const [g, v] of byGroup) links.push({ source: hub, target: node(g), value: v });
+  for (const [label, v] of kept) {
+    const g = groupOf(label) ?? 'Other';
+    links.push({ source: idx.get(g)!, target: node(`${label} `, colorOf(label)), value: v });
+  }
+  if (rest > 0) links.push({ source: idx.get('Other')!, target: node('Other categories'), value: rest });
+  if (totalIn > totalOut) links.push({ source: hub, target: node('Saved'), value: totalIn - totalOut });
+  return { nodes, links };
+}
+
+export type HeatCell = { date: Date; iso: string; value: number; level: 0 | 1 | 2 | 3 | 4 };
+
+/** Daily spend for the last `weeks` weeks, Monday-first columns, with quantile levels. */
+export function calendarHeat(transactions: Transaction[], weeks = 26, now = new Date()): { cells: HeatCell[]; max: number } {
+  const end = startOfDay(now);
+  // Start on the Monday `weeks` ago so every column is a full week.
+  const start = addDays(end, -(weeks * 7 - 1));
+  const startMonday = addDays(start, -((start.getDay() + 6) % 7));
+  const map = new Map<string, number>();
+  for (const tx of transactions) {
+    if (isTransfer(tx.kind) || signOf(tx.kind) > 0) continue;
+    const key = startOfDay(new Date(tx.date)).toISOString().slice(0, 10);
+    map.set(key, (map.get(key) ?? 0) + baseOf(tx));
+  }
+  const values = [...map.values()].filter((v) => v > 0).sort((a, b) => a - b);
+  const q = (p: number) => values[Math.min(values.length - 1, Math.floor(p * values.length))] ?? 0;
+  const t1 = q(0.35), t2 = q(0.6), t3 = q(0.85);
+  const cells: HeatCell[] = [];
+  const cursor = new Date(startMonday);
+  while (cursor <= end) {
+    const iso = cursor.toISOString().slice(0, 10);
+    const v = map.get(iso) ?? 0;
+    const level: HeatCell['level'] = v === 0 ? 0 : v <= t1 ? 1 : v <= t2 ? 2 : v <= t3 ? 3 : 4;
+    cells.push({ date: new Date(cursor), iso, value: v, level });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return { cells, max: values[values.length - 1] ?? 0 };
+}
+
+export type YoYPoint = { label: string; current: number; previous: number };
+
+/** Expense per calendar month this year against the same month last year. */
+export function yearOverYear(transactions: Transaction[], now = new Date()): YoYPoint[] {
+  const year = now.getFullYear();
+  const cur = new Array(12).fill(0);
+  const prev = new Array(12).fill(0);
+  for (const tx of transactions) {
+    if (isTransfer(tx.kind) || signOf(tx.kind) > 0) continue;
+    const d = new Date(tx.date);
+    if (d.getFullYear() === year) cur[d.getMonth()] += baseOf(tx);
+    else if (d.getFullYear() === year - 1) prev[d.getMonth()] += baseOf(tx);
+  }
+  return cur.map((v, i) => ({
+    label: new Date(year, i, 1).toLocaleDateString(undefined, { month: 'short' }),
+    current: i <= now.getMonth() ? v : 0,
+    previous: prev[i],
+  }));
+}
+
+/** Per-category spend this period against the previous one — the movers list. */
+export function categoryMovers(transactions: Transaction[], range: Range, limit = 5) {
+  const cur = new Map(categoryBreakdown(transactions, range).map((c) => [c.label, c.value]));
+  const prev = new Map(categoryBreakdown(transactions, previousRange(range)).map((c) => [c.label, c.value]));
+  const labels = new Set([...cur.keys(), ...prev.keys()]);
+  return [...labels]
+    .map((label) => ({ label, current: cur.get(label) ?? 0, previous: prev.get(label) ?? 0, delta: (cur.get(label) ?? 0) - (prev.get(label) ?? 0) }))
+    .filter((m) => Math.abs(m.delta) >= 1)
+    .sort((a, b) => Math.abs(b.delta) - Math.abs(a.delta))
+    .slice(0, limit);
 }

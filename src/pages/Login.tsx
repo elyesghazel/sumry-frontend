@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useStore } from '../store';
+import { ErrorLine } from '../ui';
 
 export function Login() {
   const { signIn } = useStore();
@@ -23,49 +24,18 @@ export function Login() {
 
   return (
     <div className="login-wrap">
-      <form className="login card fade-in" onSubmit={submit}>
-        <div style={{ marginBottom: 22 }}>
-          <div style={{ fontSize: 30, fontWeight: 300, letterSpacing: '-0.03em' }}>Sumry</div>
-          <div className="faint" style={{ fontSize: 13 }}>
-            See your money. Understand it.
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input
-            className="input"
-            type="email"
-            placeholder="Email"
-            autoComplete="username"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            className="input"
-            type="password"
-            placeholder="Password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-
-          {error ? (
-            <div className="neg" style={{ fontSize: 13 }}>
-              {error}
-            </div>
-          ) : null}
-
-          <button className="btn primary" type="submit" disabled={busy || !email || !password}>
+      <form className="login fade-in" onSubmit={submit}>
+        <h1>Sumry</h1>
+        <p className="muted" style={{ marginBottom: 26 }}>See your money. Understand it.</p>
+        <div className="stack" style={{ gap: 10 }}>
+          <input className="input lg" type="email" placeholder="Email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input className="input lg" type="password" placeholder="Password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <ErrorLine>{error}</ErrorLine>
+          <button className="btn primary" type="submit" disabled={busy || !email || !password} style={{ padding: '11px 16px' }}>
             {busy ? 'Signing in…' : 'Sign in'}
           </button>
         </div>
-
-        <p className="faint" style={{ fontSize: 11.5, marginTop: 18, marginBottom: 0 }}>
-          Accounts are created in the mobile app. This dashboard is read-mostly: it shows
-          and analyses your data, and logging happens on your phone.
-        </p>
+        <p className="tiny faint" style={{ marginTop: 22 }}>Ten wrong passwords lock sign-in for fifteen minutes. Sessions can be ended from Settings on any device.</p>
       </form>
     </div>
   );
