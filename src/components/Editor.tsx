@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, type Account, type Category, type Transaction } from '../api';
 import { useStore } from '../store';
 import { formatAmount, isTransfer, isoDay } from '../format';
@@ -36,6 +36,37 @@ export function TransactionEditor({ editing, onClose, presetAccountId }: { editi
   const [date, setDate] = useState(isoDay(editing ? new Date(editing.date) : new Date()));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The category a rule filled in, so it can be swapped or cleared as the note changes.
+  // A category picked by hand (or already on an edited entry) is never overridden, and
+  // once Expense/Income is picked by hand only rules of that kind apply.
+  const [ruleCategory, setRuleCategory] = useState<string | null>(null);
+  const [categoryPicked, setCategoryPicked] = useState(Boolean(editing?.categoryLabel));
+  const [modePicked, setModePicked] = useState(Boolean(editing));
+
+  useEffect(() => {
+    if (!token || mode === 'TRANSFER' || categoryPicked) return;
+    const description = note.trim();
+    const timer = window.setTimeout(async () => {
+      let match: string | null = null;
+      if (description) {
+        try {
+          match = (await api.testRule(token, description, accountId || null)).categoryLabel;
+        } catch {
+          return;
+        }
+      }
+      const category = match ? categories.find((c) => c.label === match) : undefined;
+      if (category && (!modePicked || category.categoryType === mode)) {
+        setMode(category.categoryType === 'INCOME' ? 'INCOME' : 'EXPENSE');
+        setCategoryLabel(category.label);
+        setRuleCategory(category.label);
+      } else if (ruleCategory) {
+        setCategoryLabel('');
+        setRuleCategory(null);
+      }
+    }, 260);
+    return () => window.clearTimeout(timer);
+  }, [note, accountId, token, mode, modePicked, categoryPicked]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const options = categories
     .filter((c) => c.categoryType === (mode === 'INCOME' ? 'INCOME' : 'EXPENSE'))
@@ -125,7 +156,15 @@ export function TransactionEditor({ editing, onClose, presetAccountId }: { editi
     >
       <div className="seg" style={{ alignSelf: 'flex-start' }}>
         {(['EXPENSE', 'INCOME', 'TRANSFER'] as const).map((m) => (
-          <button key={m} aria-pressed={mode === m} onClick={() => { setMode(m); if (m !== 'TRANSFER') setCategoryLabel(''); }}>
+          <button
+            key={m}
+            aria-pressed={mode === m}
+            onClick={() => {
+              setMode(m);
+              setModePicked(true);
+              if (m !== 'TRANSFER') { setCategoryLabel(''); setRuleCategory(null); setCategoryPicked(false); }
+            }}
+          >
             {m === 'EXPENSE' ? 'Expense' : m === 'INCOME' ? 'Income' : 'Transfer'}
           </button>
         ))}
@@ -158,8 +197,12 @@ export function TransactionEditor({ editing, onClose, presetAccountId }: { editi
         </>
       ) : (
         <div className="field-row">
-          <Field label="Category" grow>
-            <select className="input" value={categoryLabel} onChange={(e) => setCategoryLabel(e.target.value)}>
+          <Field label={`Category${ruleCategory && ruleCategory === categoryLabel ? ' · rule' : ''}`} grow>
+            <select
+              className="input"
+              value={categoryLabel}
+              onChange={(e) => { setCategoryLabel(e.target.value); setRuleCategory(null); setCategoryPicked(Boolean(e.target.value)); }}
+            >
               <option value="">Choose…</option>
               {options.map((c) => (
                 <option key={c.id} value={c.label}>{c.parentGroup ? `${c.parentGroup} · ${c.label}` : c.label}</option>
