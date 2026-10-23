@@ -5,7 +5,7 @@
  * production API.
  */
 export const API_URL: string =
-  (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://sumry-api.elyesghazel.ch';
+  (import.meta.env.VITE_API_URL as string | undefined) ?? 'https://sumry.elyesghazel.ch';
 
 export type CategoryType = 'INCOME' | 'EXPENSE';
 export type TransactionKind = 'INCOME' | 'EXPENSE' | 'TRANSFER_IN' | 'TRANSFER_OUT';

@@ -7,7 +7,7 @@ services:
     build:
       context: .
       args:
-        VITE_API_URL: https://sumry-api.elyesghazel.ch
+        VITE_API_URL: https://sumry.elyesghazel.ch
     container_name: "web-sumry"
     restart: unless-stopped
     security_opt:
