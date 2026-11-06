@@ -19,6 +19,8 @@ export type Account = {
   accountName: string;
   currentBalance: number;
   currency: string;
+  /** Counts toward safe-to-spend; off for savings. */
+  spending: boolean;
   baseBalance: number;
   baseCurrency: string;
 };
@@ -146,6 +148,7 @@ export type Occurrence = {
 export type SafeToSpend = {
   balance: number;
   accountId: string | null;
+  accountIds: string[];
   today: string;
   horizon: string;
   daysToHorizon: number;
@@ -424,9 +427,9 @@ export const api = {
 
   // ---- accounts
   accounts: (token: string) => request<Account[]>('/api/users/accounts/', { token }),
-  createAccount: (token: string, accountName: string, currentBalance: number, currency = 'CHF') =>
-    request<Account>('/api/users/accounts', { token, body: { accountName, currentBalance, currency } }),
-  updateAccount: (token: string, id: string, patch: { accountName?: string; currentBalance?: number; currency?: string }) =>
+  createAccount: (token: string, accountName: string, currentBalance: number, currency = 'CHF', spending = true) =>
+    request<Account>('/api/users/accounts', { token, body: { accountName, currentBalance, currency, spending } }),
+  updateAccount: (token: string, id: string, patch: { accountName?: string; currentBalance?: number; currency?: string; spending?: boolean }) =>
     request<Account>(`/api/users/accounts/${id}`, { token, body: patch, method: 'PUT' }),
   deleteAccount: (token: string, id: string) =>
     request<void>(`/api/users/accounts/${id}`, { token, method: 'DELETE' }),

@@ -98,7 +98,7 @@ export function Accounts() {
                   return (
                     <tr key={a.id}>
                       <td>
-                        <span className="dot-row"><Swatch color={colorFor(i)} /><span>{a.accountName}</span>{a.currency !== CURRENCY ? <Tag>{a.currency}</Tag> : null}{goal ? <a className="tiny link" href={href('plan')}>goal · {Math.round(goal.percentage)}%</a> : null}</span>
+                        <span className="dot-row"><Swatch color={colorFor(i)} /><span>{a.accountName}</span>{a.currency !== CURRENCY ? <Tag>{a.currency}</Tag> : null}{a.spending === false ? <Tag>savings</Tag> : null}{goal ? <a className="tiny link" href={href('plan')}>goal · {Math.round(goal.percentage)}%</a> : null}</span>
                       </td>
                       <td className="right num faint">{st.count}</td>
                       <td className="right num pos money">{formatAmount(st.inn)}</td>

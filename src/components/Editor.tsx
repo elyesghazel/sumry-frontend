@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api, type Account, type Category, type Transaction } from '../api';
 import { useStore } from '../store';
 import { formatAmount, isTransfer, isoDay } from '../format';
-import { ErrorLine, Field, Modal } from '../ui';
+import { ErrorLine, Field, Modal, Switch } from '../ui';
 
 const parseNum = (s: string) => Number.parseFloat(s.replace(/'/g, '').replace(',', '.'));
 
@@ -317,6 +317,7 @@ export function AccountEditor({ editing, onClose }: { editing: Account | null; o
   const { token, refresh, toast } = useStore();
   const [name, setName] = useState(editing?.accountName ?? '');
   const [currency, setCurrency] = useState(editing?.currency ?? 'CHF');
+  const [spending, setSpending] = useState(editing?.spending ?? true);
   const [balance, setBalance] = useState('0.00');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -326,8 +327,8 @@ export function AccountEditor({ editing, onClose }: { editing: Account | null; o
     setBusy(true);
     setError(null);
     try {
-      if (editing) await api.updateAccount(token, editing.id, { accountName: name.trim(), currency });
-      else await api.createAccount(token, name.trim(), parseNum(balance) || 0, currency);
+      if (editing) await api.updateAccount(token, editing.id, { accountName: name.trim(), currency, spending });
+      else await api.createAccount(token, name.trim(), parseNum(balance) || 0, currency, spending);
       toast(editing ? 'Saved' : 'Account created');
       await refresh(['core']);
       onClose();
@@ -380,6 +381,7 @@ export function AccountEditor({ editing, onClose }: { editing: Account | null; o
           <input className="input serif num" inputMode="decimal" value={balance} onChange={(e) => setBalance(e.target.value)} />
         </Field>
       ) : null}
+      <Switch checked={spending} onChange={setSpending} label={<span>Counts toward safe to spend <span className="faint">(turn off for savings)</span></span>} />
       <ErrorLine>{error}</ErrorLine>
     </Modal>
   );

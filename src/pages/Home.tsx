@@ -70,7 +70,7 @@ export function Home() {
               </div>
               <div className="row wrap" style={{ gap: 18, marginTop: 14 }}>
                 <span className="small muted"><strong className="num money">{formatAmount(safe.perDay)}</strong> per day for {safe.daysToHorizon} days</span>
-                <span className="small muted">{formatAmount(safe.balance)} on hand − {formatAmount(safe.upcomingExpenses)} committed</span>
+                <span className="small muted">{formatAmount(safe.balance)} on hand − {formatAmount(safe.upcomingExpenses + safe.upcomingTransfersOut)} committed{accounts.some((a) => a.spending === false) ? ' · savings left out' : ''}</span>
               </div>
             </>
           ) : <Empty>Loading…</Empty>}
