@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import {
+  type ImportCheck,
   type ImportPreview,
   type ReconcileOffer,
   type StatementFileKind,
@@ -10,6 +11,7 @@ import {
   importFormatFor,
   maskIbansIn,
   reconcileOffer,
+  rowsForCheck,
   splitImportWarnings,
   statementFileKind,
 } from '../../core';
@@ -55,7 +57,11 @@ export function Import({ route }: { route: Route }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<{ booked: number; skipped: string[] } | null>(null);
+  const [doneTo, setDoneTo] = useState<string | null>(null);
   const [offer, setOffer] = useState<ReconcileOffer | null>(null);
+  const [check, setCheck] = useState<ImportCheck | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [removed, setRemoved] = useState<Set<string>>(new Set());
   const account = accounts.find((a) => a.id === accountId);
 
   const pick = async (f: File | null) => {
@@ -87,13 +93,59 @@ export function Import({ route }: { route: Route }) {
           ? { accountId, format: importFormatFor(file.kind), fileBase64: file.base64, fileName: file.name }
           : { accountId, csv },
       );
-      setPreview(p);
+      setPreview(p); setCheck(null); setRemoved(new Set());
       const c: typeof choices = {};
       for (const r of p.rows) c[r.line] = { include: !r.duplicate, category: r.categoryLabel ?? '' };
       setChoices(c);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not read the file');
       setPreview(null);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Ask Claude about the rows nothing matched; its verdicts only pre-set the choices. */
+  const askClaude = async () => {
+    if (!token || !preview) return;
+    const rows = rowsForCheck(preview.rows);
+    if (!rows.length) return;
+    setChecking(true); setError(null);
+    try {
+      const res = await api.importCheck(token, {
+        accountId: preview.accountId,
+        rows,
+        matchedIds: preview.rows.flatMap((r) => r.matchIds ?? (r.duplicateOfId ? [r.duplicateOfId] : [])),
+        statementFrom: preview.statementFrom ?? null,
+        statementTo: preview.statementTo ?? null,
+      });
+      setCheck(res);
+      const next = { ...choices };
+      for (const sug of res.suggestions) {
+        const c = next[sug.line];
+        if (!c) continue;
+        if (sug.verdict === 'logged') next[sug.line] = { ...c, include: false };
+        else if (sug.verdict === 'suspicious') next[sug.line] = { ...c, include: false };
+        else if (!c.category && sug.categoryLabel) next[sug.line] = { ...c, category: sug.categoryLabel };
+      }
+      setChoices(next);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'The Claude check failed');
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const removeAdjustment = async (id: string) => {
+    if (!token) return;
+    setBusy(true);
+    try {
+      await api.deleteTransaction(token, id);
+      setRemoved(new Set([...removed, id]));
+      toast('Adjustment removed');
+      await refresh(['core']);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not remove it');
     } finally {
       setBusy(false);
     }
@@ -113,7 +165,8 @@ export function Import({ route }: { route: Route }) {
       await refresh(['core', 'budgets', 'insights', 'planned']);
       const fresh = (await api.accounts(token)).find((a) => a.id === preview.accountId);
       setOffer(fresh ? reconcileOffer(preview, fresh.currentBalance) : null);
-      setPreview(null); setFile(null); setPaste('');
+      setDoneTo(preview.statementTo ?? null);
+      setPreview(null); setFile(null); setPaste(''); setCheck(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Import failed');
     } finally {
@@ -139,6 +192,9 @@ export function Import({ route }: { route: Route }) {
   const split = useMemo(() => splitImportWarnings(preview?.warnings), [preview]);
   const selected = preview ? preview.rows.filter((r) => choices[r.line]?.include) : [];
   const missing = selected.filter((r) => !choices[r.line]?.category && !(r.kind === 'INCOME' ? defInc : defExp)).length;
+  const verdicts = useMemo(() => new Map((check?.suggestions ?? []).map((v) => [v.line, v])), [check]);
+  const openRows = preview ? rowsForCheck(preview.rows).length : 0;
+  const txById = useMemo(() => new Map(transactions.map((t) => [t.id, t])), [transactions]);
 
   return (
     <>
@@ -157,7 +213,7 @@ export function Import({ route }: { route: Route }) {
         {showPaste ? (
           <textarea className="input" style={{ marginTop: 8 }} value={paste} onChange={(e) => { setPaste(e.target.value); setFile(null); }} placeholder="Datum;Avisierungstext;Gutschrift in CHF;Lastschrift in CHF;…" />
         ) : null}
-        <p className="tiny faint" style={{ marginTop: 10 }}>Nothing is booked until you confirm. Entries already in Sumry for the same day and amount are flagged as duplicates. IBANs in booking texts are masked.</p>
+        <p className="tiny faint" style={{ marginTop: 10 }}>Nothing is booked until you confirm. A row counts as already logged when an entry with the same amount sits within 3 days of it, or when it is two or three entries added up (a top-up and its fee). IBANs in booking texts are masked.</p>
         <ErrorLine>{error}</ErrorLine>
       </Section>
 
@@ -191,6 +247,9 @@ export function Import({ route }: { route: Route }) {
               )}
             </div>
           ) : null}
+          {!offer && doneTo && account ? (
+            <p className="small muted" style={{ marginTop: 8 }}>This statement ends on {formatShortDate(doneTo)}, so Sumry's balance today can't be compared with its closing balance. To check {account.accountName}, compare with your banking app today.</p>
+          ) : null}
           <div className="row" style={{ gap: 8, marginTop: 12 }}>
             <a className="btn sm" href={href('activity', { account: accountId })}>See the entries</a>
           </div>
@@ -207,12 +266,47 @@ export function Import({ route }: { route: Route }) {
             {preview.statementOpeningBalance != null ? <div><span className="caption">Opening</span><span className="num money">{formatAmount(preview.statementOpeningBalance)}</span></div> : null}
             {preview.statementClosingBalance != null ? <div><span className="caption">Closing</span><span className="num money">{formatAmount(preview.statementClosingBalance)}</span></div> : null}
             <div><span className="caption">New</span><span className="num">{preview.newCount}</span></div>
-            <div><span className="caption">Duplicates</span><span className="num faint">{preview.duplicateCount}</span></div>
+            <div><span className="caption">Already logged</span><span className="num faint">{preview.duplicateCount}</span></div>
+            {preview.balanceOk != null ? (
+              <div title={preview.computedClosingBalance != null ? `opening + rows = ${formatAmount(preview.computedClosingBalance)}` : undefined}>
+                <span className="caption">Rows add up</span>
+                <span className={preview.balanceOk ? 'pos' : 'neg'}>{preview.balanceOk ? '✓ every booking read' : `✗ off by ${formatSigned((preview.statementClosingBalance ?? 0) - (preview.computedClosingBalance ?? 0))}`}</span>
+              </div>
+            ) : null}
             <div><span className="caption">No category</span><span className={`num ${preview.uncategorisedCount ? 'accent' : ''}`}>{preview.uncategorisedCount}</span></div>
           </div>
 
           {split.notes.length ? <ul className="notes small muted">{split.notes.slice(0, 8).map((n, i) => <li key={i}>{n}</li>)}</ul> : null}
           {split.diagnostics.map((d, i) => <DiagnosticsBlock key={i} text={d} />)}
+
+          {preview.aiCheckAvailable && openRows > 0 ? (
+            <div className="ai-check">
+              <div className="row-between wrap" style={{ gap: 10 }}>
+                <div className="small">
+                  {check ? <span>{check.summary || 'Claude checked the open rows.'}</span>
+                    : <span><strong>{openRows}</strong> rows matched nothing. Claude can compare them with your entries around this period: different wording, a few days off, foreign currency, split payments.</span>}
+                </div>
+                <button className="btn sm" onClick={askClaude} disabled={checking || busy}>{checking ? 'Claude is checking…' : check ? 'Check again' : 'Check with Claude'}</button>
+              </div>
+              {!check ? <p className="tiny faint" style={{ marginTop: 6 }}>Sends the open rows (IBANs masked) and your entries on this account from that period to Claude. Nothing is booked or changed without you.</p> : null}
+              {check?.adjustments.filter((a) => !removed.has(a.id)).map((a) => {
+                const t = txById.get(a.id);
+                return (
+                  <div key={a.id} className="offer warn" style={{ marginTop: 10 }}>
+                    <div className="small">
+                      <strong>Adjustment would count twice:</strong>{' '}
+                      {t ? <>{t.description || 'Abgleich'} · {formatShortDate(t.date)} · <span className="num money">{formatSigned(t.kind === 'INCOME' ? t.amount : -t.amount)}</span></> : 'an adjustment'}
+                    </div>
+                    <div className="tiny faint" style={{ marginTop: 2 }}>{a.note}</div>
+                    <div className="row" style={{ gap: 8, marginTop: 8 }}>
+                      <button className="btn sm danger" onClick={() => removeAdjustment(a.id)} disabled={busy}>Remove adjustment</button>
+                      <span className="tiny faint">Only if you book the rows it covered.</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
 
           {preview.rows.length ? (
             <>
@@ -229,11 +323,16 @@ export function Import({ route }: { route: Route }) {
                   return (
                     <div key={r.line} className={`improw ${r.duplicate ? 'dupe' : ''} ${uncat ? 'uncat' : ''} ${c.include ? '' : 'off'}`}>
                       <input type="checkbox" checked={c.include} aria-label="Include" onChange={(e) => setChoices({ ...choices, [r.line]: { ...c, include: e.target.checked } })} />
-                      <span className="faint small nowrap">{formatShortDate(r.date)}</span>
+                      <span className="faint small nowrap" title={r.bookingDate ? `booked ${formatShortDate(r.bookingDate)}` : undefined}>{formatShortDate(r.date)}</span>
                       <span className="imptext">
                         <span className="truncate">{maskIbansIn(r.description)}</span>
                         <span className="row" style={{ gap: 4 }}>
-                          {r.duplicate ? <Tag>duplicate</Tag> : null}
+                          {r.duplicate ? <Tag>{r.matchKind === 'split' ? 'split' : 'logged'}</Tag> : null}
+                          {r.duplicate && r.matchNote ? <span className="tiny faint truncate">= {r.matchNote}</span> : null}
+                          {verdicts.get(r.line)?.verdict === 'logged' ? <Tag tone="accent">Claude: logged</Tag> : null}
+                          {verdicts.get(r.line)?.verdict === 'suspicious' ? <Tag tone="neg">Claude: check</Tag> : null}
+                          {verdicts.get(r.line)?.verdict === 'new' ? <Tag tone="pos">Claude: new</Tag> : null}
+                          {verdicts.get(r.line) && verdicts.get(r.line)!.verdict !== 'new' ? <span className="tiny faint truncate">{verdicts.get(r.line)!.reason}</span> : null}
                           {r.categoryLabel && !r.duplicate ? <Tag tone="pos">rule</Tag> : null}
                           {r.currencyMismatch ? <Tag tone="neg">{r.currency}</Tag> : null}
                         </span>
