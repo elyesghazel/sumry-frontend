@@ -1,4 +1,4 @@
-import type { Transaction, TransactionKind } from './api';
+import type { Transaction, TransactionKind } from './types';
 
 export const CURRENCY = 'CHF';
 

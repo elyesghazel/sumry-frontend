@@ -1,4 +1,4 @@
-import type { Account, Transaction } from './api';
+import type { Account, Transaction } from './types';
 import { baseOf, isTransfer, signOf, startOfDay } from './format';
 
 export type Range = { from: Date; to: Date; label: string; days: number };
