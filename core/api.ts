@@ -13,6 +13,8 @@ import type {
   Goal,
   GoalInput,
   GoalPatch,
+  ImportCheck,
+  ImportCheckInput,
   ImportCommit,
   ImportCommitInput,
   ImportPreview,
@@ -307,6 +309,8 @@ export function createApi(config: ApiConfig) {
     /** Parses a statement without booking anything: CSV text, or a PDF / camt.053 file as base64. */
     importPreview: (token: string, input: ImportPreviewInput) =>
       request<ImportPreview>('/api/import/preview', { token, body: { format: 'auto', ...input } }),
+    importCheck: (token: string, input: ImportCheckInput) =>
+      request<ImportCheck>('/api/import/check', { token, body: input }),
     importCommit: (token: string, input: ImportCommitInput) =>
       request<ImportCommit>('/api/import/commit', { token, body: input }),
     exportCsv: (token: string, p: ExportParams = {}) =>

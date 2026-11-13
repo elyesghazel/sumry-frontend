@@ -62,11 +62,28 @@ export type ReconcileOffer = {
  * statement carries no closing balance.
  */
 export function reconcileOffer(
-  preview: Pick<ImportPreview, 'statementClosingBalance'>,
+  preview: Pick<ImportPreview, 'statementClosingBalance' | 'statementTo'>,
   recordedBalance: number,
+  today: Date = new Date(),
 ): ReconcileOffer | null {
   const closing = preview.statementClosingBalance;
   if (closing === null || closing === undefined || !Number.isFinite(closing)) return null;
+  // An older statement closed at an older balance; reconciling today's account to it would
+  // book a wrong adjustment. Only offer it when the statement ends within the last few days.
+  if (preview.statementTo && !statementIsRecent(preview.statementTo, today)) return null;
   const difference = Math.round((closing - recordedBalance) * 100) / 100;
   return { statementBalance: closing, recordedBalance, difference, matches: Math.abs(difference) < 0.005 };
+}
+
+/** True when a statement ending on `to` (ISO date) is recent enough to compare with today's balance. */
+export function statementIsRecent(to: string, today: Date = new Date(), days = 3): boolean {
+  const end = new Date(`${to}T23:59:59`);
+  return today.getTime() - end.getTime() <= days * 86_400_000;
+}
+
+/** The rows still unmatched, in the shape the Claude check expects. */
+export function rowsForCheck(rows: ImportPreview['rows'], skip: Set<number> = new Set()) {
+  return rows
+    .filter((r) => !r.duplicate && !skip.has(r.line))
+    .map((r) => ({ line: r.line, date: r.date, bookingDate: r.bookingDate ?? null, description: r.description, amount: r.amount, kind: r.kind }));
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { importFormatFor, reconcileOffer, splitImportWarnings, statementFileKind } from '../../core';
+import { importFormatFor, reconcileOffer, rowsForCheck, splitImportWarnings, statementFileKind } from '../../core';
 
 describe('statementFileKind', () => {
   it('reads the extension first, then the mime type', () => {
@@ -37,5 +37,19 @@ describe('reconcileOffer', () => {
       matches: false,
     });
     expect(reconcileOffer({ statementClosingBalance: 100.001 }, 100)?.matches).toBe(true);
+  });
+});
+
+describe('older statements', () => {
+  const today = new Date('2026-11-13T14:00:00');
+  it('does not offer a reconcile against a closing balance from weeks ago', () => {
+    expect(reconcileOffer({ statementClosingBalance: 475.09, statementTo: '2026-10-31' }, 352.97, today)).toBeNull();
+  });
+  it('still offers it for a statement that ended a day ago', () => {
+    expect(reconcileOffer({ statementClosingBalance: 100, statementTo: '2026-11-12' }, 90, today)?.difference).toBe(10);
+  });
+  it('lists only unmatched rows for the Claude check', () => {
+    const row = { line: 1, date: '2026-10-01', description: 'x', rawDescription: 'x', amount: 5, kind: 'EXPENSE' as const, currency: null, categoryLabel: null, duplicate: false, duplicateOfId: null, currencyMismatch: false };
+    expect(rowsForCheck([row, { ...row, line: 2, duplicate: true }]).map((r) => r.line)).toEqual([1]);
   });
 });
