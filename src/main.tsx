@@ -1,10 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-// Self-hosted rather than fetched from Google: no third-party request on every load,
-// and the dashboard keeps working without external network access.
-import '@fontsource-variable/fraunces/opsz.css';
-import '@fontsource-variable/fraunces/opsz-italic.css';
-import '@fontsource-variable/inter/opsz.css';
+// JetBrains Mono is self-hosted from src/fonts via styles.css, no third-party requests.
 import './styles.css';
 import App from './App.tsx';
 

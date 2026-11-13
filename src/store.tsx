@@ -122,7 +122,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (theme === 'system') delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = theme;
     const dark = theme === 'dark' || (theme === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-    document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#17150f' : '#f4f1ea');
+    document.querySelector('meta[name=theme-color]')?.setAttribute('content', dark ? '#000000' : '#fafafa');
   }, [theme]);
   useEffect(() => {
     document.documentElement.dataset.density = density;

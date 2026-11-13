@@ -1,50 +1,59 @@
 /*
- * Sumry — the ledger.
+ * Sumry, in the eg. look (design.elyesghazel.ch).
  *
- * Paper, ink, hairlines. Numbers are set in a serif with optical sizing; everything else
- * in a tabular sans. Colour is reserved for the direction money moved and for the
- * categorical ramp in charts — the interface itself is near-monochrome, so the figures
- * are the loudest thing on the page.
+ * Black page, one monospace family, white for what matters, greys for the rest, and the
+ * muted brick red only for the one thing to look at. Money direction uses the eg. status
+ * colours. Same layout as the ledger; only the skin changes.
  *
- * Light is the primary palette; dark is its own set, not an inversion. Density has two
- * steps and only changes spacing, never type.
+ * Dark is the default, light follows the OS unless the user picks one.
  */
 
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 100 800; font-display: swap;
+  src: url('./fonts/jetbrains-mono-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 100 800; font-display: swap;
+  src: url('./fonts/jetbrains-mono-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'JetBrains Mono'; font-style: italic; font-weight: 100 800; font-display: swap;
+  src: url('./fonts/jetbrains-mono-latin-wght-italic.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  --paper: #f4f1ea;
-  --paper-2: #ebe7de;
-  --card: #fbfaf6;
-  --ink: #1a1814;
-  --ink-2: #4f4a43;
-  --ink-3: #8b857b;
-  --rule: rgba(26, 24, 20, 0.14);
-  --rule-strong: rgba(26, 24, 20, 0.36);
-  --accent: #9a6b1f;
-  --accent-soft: rgba(154, 107, 31, 0.12);
-  --pos: #2f6b4f;
-  --pos-soft: rgba(47, 107, 79, 0.12);
-  --neg: #a63d2f;
-  --neg-soft: rgba(166, 61, 47, 0.12);
-  --shadow: 0 1px 0 rgba(26, 24, 20, 0.06), 0 12px 32px -18px rgba(26, 24, 20, 0.35);
+  --paper: #000000;
+  --paper-2: #1a1a1a;
+  --card: #0f0f0f;
+  --ink: #ffffff;
+  --ink-2: #a6a6a6;
+  --ink-3: #8a8a8a;
+  --rule: #333333;
+  --rule-strong: #666666;
+  --accent: #c47070;
+  --accent-soft: rgba(196, 112, 112, 0.12);
+  --pos: #6cc28a;
+  --pos-soft: rgba(108, 194, 138, 0.12);
+  --neg: #ff5f56;
+  --neg-soft: rgba(255, 95, 86, 0.13);
+  --warn: #d9ad5b;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
 
-  /* Categorical ramp: earth tones, eight and never cycled. */
-  --c1: #9a6b1f;
-  --c2: #b4553a;
-  --c3: #5b7a3a;
-  --c4: #4d6b86;
-  --c5: #7d5478;
-  --c6: #2f7d78;
-  --c7: #8a6a4b;
-  --c8: #a8566b;
+  /* Chart series: the eg. greys and status hues, eight and never cycled. */
+  --c1: #ffffff;
+  --c2: #c47070;
+  --c3: #74a7e6;
+  --c4: #6cc28a;
+  --c5: #d9ad5b;
+  --c6: #a6a6a6;
+  --c7: #b08fd0;
+  --c8: #5f5f5f;
 
-  --serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-  --sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --serif: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --sans: var(--serif);
 
-  --r-sm: 4px;
-  --r: 8px;
-  --pill: 999px;
+  --r-sm: 2px;
+  --r: 4px;
+  --pill: 2px;
 
   --sp: 16px;
   --sp-lg: 28px;
@@ -52,60 +61,50 @@
   --content: 1200px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    color-scheme: dark;
-    --paper: #17150f;
-    --paper-2: #100f0b;
-    --card: #1e1b15;
-    --ink: #ece6d9;
-    --ink-2: #b3ab9c;
-    --ink-3: #766f63;
-    --rule: rgba(236, 230, 217, 0.14);
-    --rule-strong: rgba(236, 230, 217, 0.38);
-    --accent: #d1a353;
-    --accent-soft: rgba(209, 163, 83, 0.16);
-    --pos: #7fb995;
-    --pos-soft: rgba(127, 185, 149, 0.16);
-    --neg: #e0836f;
-    --neg-soft: rgba(224, 131, 111, 0.16);
-    --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 12px 32px -18px rgba(0, 0, 0, 0.8);
-    --c1: #d1a353;
-    --c2: #e0836f;
-    --c3: #9fbf6e;
-    --c4: #8fb0cc;
-    --c5: #c493bf;
-    --c6: #6fc2bb;
-    --c7: #c9a583;
-    --c8: #e08aa2;
-    }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --paper: #fafafa;
+    --paper-2: #ebebeb;
+    --card: #ffffff;
+    --ink: #0a0a0a;
+    --ink-2: #555555;
+    --ink-3: #707070;
+    --rule: #d4d4d4;
+    --rule-strong: #888888;
+    --accent: #a94848;
+    --accent-soft: rgba(169, 72, 72, 0.09);
+    --pos: #1e7a44;
+    --pos-soft: rgba(30, 122, 68, 0.1);
+    --neg: #d0201f;
+    --neg-soft: rgba(208, 32, 31, 0.08);
+    --warn: #8f5f00;
+    --shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    --c1: #0a0a0a; --c2: #a94848; --c3: #1f5fb4; --c4: #1e7a44;
+    --c5: #8f5f00; --c6: #707070; --c7: #6b4c9a; --c8: #b5b5b5;
+  }
 }
 
-:root[data-theme='dark'] {
-  color-scheme: dark;
-  --paper: #17150f;
-  --paper-2: #100f0b;
-  --card: #1e1b15;
-  --ink: #ece6d9;
-  --ink-2: #b3ab9c;
-  --ink-3: #766f63;
-  --rule: rgba(236, 230, 217, 0.14);
-  --rule-strong: rgba(236, 230, 217, 0.38);
-  --accent: #d1a353;
-  --accent-soft: rgba(209, 163, 83, 0.16);
-  --pos: #7fb995;
-  --pos-soft: rgba(127, 185, 149, 0.16);
-  --neg: #e0836f;
-  --neg-soft: rgba(224, 131, 111, 0.16);
-  --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 12px 32px -18px rgba(0, 0, 0, 0.8);
-  --c1: #d1a353;
-  --c2: #e0836f;
-  --c3: #9fbf6e;
-  --c4: #8fb0cc;
-  --c5: #c493bf;
-  --c6: #6fc2bb;
-  --c7: #c9a583;
-  --c8: #e08aa2;
+:root[data-theme='light'] {
+  color-scheme: light;
+  --paper: #fafafa;
+  --paper-2: #ebebeb;
+  --card: #ffffff;
+  --ink: #0a0a0a;
+  --ink-2: #555555;
+  --ink-3: #707070;
+  --rule: #d4d4d4;
+  --rule-strong: #888888;
+  --accent: #a94848;
+  --accent-soft: rgba(169, 72, 72, 0.09);
+  --pos: #1e7a44;
+  --pos-soft: rgba(30, 122, 68, 0.1);
+  --neg: #d0201f;
+  --neg-soft: rgba(208, 32, 31, 0.08);
+  --warn: #8f5f00;
+  --shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  --c1: #0a0a0a; --c2: #a94848; --c3: #1f5fb4; --c4: #1e7a44;
+  --c5: #8f5f00; --c6: #707070; --c7: #6b4c9a; --c8: #b5b5b5;
 }
 
 :root[data-density='compact'] {
@@ -674,3 +673,36 @@ a.panel.block-link:hover { border-color: var(--rule-strong); }
 }
 .occ.later .occ-actions { opacity: 0.55; }
 .occ.later:hover .occ-actions { opacity: 1; }
+
+
+/* ------------------------------------------------------------- eg. overrides */
+
+body { font-size: 13.5px; line-height: 1.55; font-feature-settings: 'calt' 0, 'zero' 1; }
+.serif, h1, .hero-value, .stat .value, .table .amount, .input.serif, .modal-head h2, .acct .serif {
+  font-variation-settings: normal; font-style: normal; letter-spacing: -0.02em;
+}
+h1 { font-weight: 650; font-size: 26px; }
+.hero-value { font-weight: 650; }
+.stat .value { font-weight: 600; font-size: 24px; }
+.table .amount { font-size: 13.5px; font-weight: 500; letter-spacing: 0; }
+.modal-head h2 { font-weight: 650; font-size: 17px; }
+
+/* Section labels carry the eg. `//` prefix. */
+.caption, .section-head h2, .panel-head h2, .stat .label, .table th { letter-spacing: 0.2em; }
+.section-head h2::before, .panel-head h2::before { content: '// '; color: var(--ink-3); letter-spacing: 0; }
+
+/* Wordmark: lowercase, bold, accent period - same shape as the eg. logo. */
+.wordmark { font-style: normal; font-variation-settings: normal; font-weight: 700; font-size: 20px; letter-spacing: -0.03em; text-transform: lowercase; }
+.wordmark::after { content: '.'; color: var(--accent); }
+.login h1 { font-style: normal; font-variation-settings: normal; font-weight: 700; font-size: 34px; letter-spacing: -0.03em; text-transform: lowercase; }
+.login h1::after { content: '.'; color: var(--accent); }
+
+/* Nearly square everywhere; only status dots stay round. */
+.palette { border-radius: var(--r); }
+.meter, .meter i { border-radius: 0; }
+.switch input, .switch input::after { border-radius: 1px; }
+.backdrop { background: rgba(0, 0, 0, 0.8); }
+.meter.warn i { background: var(--warn); }
+.btn.primary:hover { opacity: 1; background: var(--ink-2); border-color: var(--ink-2); }
+.panel, .modal, .acct { box-shadow: none; }
+a:focus-visible, button:focus-visible, .input:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

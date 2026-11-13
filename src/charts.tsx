@@ -42,7 +42,7 @@ export function useTokens() {
       accent: cssVar('--accent') || '#9a6b1f',
       positive: cssVar('--pos') || '#2f6b4f',
       negative: cssVar('--neg') || '#a63d2f',
-      paper: cssVar('--paper') || '#f4f1ea',
+      paper: cssVar('--paper') || '#000000',
       card: cssVar('--card') || '#fbfaf6',
     };
   }
