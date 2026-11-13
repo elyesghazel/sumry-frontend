@@ -340,17 +340,30 @@ export function categoryColor(key: string, explicit?: string | null): string {
 
 // ------------------------------------------------------------------- routing
 
-export type Page = 'home' | 'activity' | 'accounts' | 'budgets' | 'plan' | 'insights' | 'settings';
+export type Page = 'today' | 'activity' | 'import' | 'plan' | 'insights' | 'settings' | 'account';
 
-const PAGES: Page[] = ['home', 'activity', 'accounts', 'budgets', 'plan', 'insights', 'settings'];
+const PAGES: Page[] = ['today', 'activity', 'import', 'plan', 'insights', 'settings', 'account'];
+
+/** Pages of the old layout, so bookmarks and the PWA start URL keep working. */
+const LEGACY: Record<string, [Page, Record<string, string>?]> = {
+  home: ['today'],
+  accounts: ['settings', { tab: 'accounts' }],
+  budgets: ['plan'],
+};
 
 export type Route = { page: Page; params: URLSearchParams };
 
 function parseHash(): Route {
   const raw = window.location.hash.replace(/^#\/?/, '');
   const [path, query = ''] = raw.split('?');
-  const page = (PAGES as string[]).includes(path) ? (path as Page) : 'home';
-  return { page, params: new URLSearchParams(query) };
+  const params = new URLSearchParams(query);
+  const legacy = LEGACY[path];
+  if (legacy) {
+    for (const [k, v] of Object.entries(legacy[1] ?? {})) if (!params.has(k)) params.set(k, v);
+    return { page: legacy[0], params };
+  }
+  const page = (PAGES as string[]).includes(path) ? (path as Page) : 'today';
+  return { page, params };
 }
 
 /** Hash routing: linkable pages, working back button, no dependency. */
@@ -362,13 +375,50 @@ export function useRoute(): [Route, (page: Page, params?: Record<string, string>
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
   const go = useCallback((page: Page, params?: Record<string, string>) => {
-    const q = params ? new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '')).toString() : '';
-    window.location.hash = `/${page}${q ? `?${q}` : ''}`;
+    window.location.hash = href(page, params).slice(1);
   }, []);
   return [route, go];
 }
 
 export const href = (page: Page, params?: Record<string, string>) => {
-  const q = params ? new URLSearchParams(params).toString() : '';
+  const q = params ? new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString() : '';
   return `#/${page}${q ? `?${q}` : ''}`;
 };
+
+export const navigate = (page: Page, params?: Record<string, string>) => {
+  window.location.hash = href(page, params).slice(1);
+};
+
+// ------------------------------------------------------------------- snooze
+
+const SNOOZE_KEY = 'sumry.snooze';
+
+function readSnoozes(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(SNOOZE_KEY) ?? '{}') as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * "Needs you" items hidden until a date. Device-local on purpose: snoozing is a nudge,
+ * not data, and expired entries are dropped on the next write.
+ */
+export function useSnoozes(): [Set<string>, (id: string, days: number) => void] {
+  const [map, setMap] = useState<Record<string, string>>(() => readSnoozes());
+  const today = new Date().toISOString().slice(0, 10);
+  const active = useMemo(() => new Set(Object.entries(map).filter(([, until]) => until > today).map(([id]) => id)), [map, today]);
+  const snooze = useCallback((id: string, days: number) => {
+    const until = new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+    setMap((prev) => {
+      const now = new Date().toISOString().slice(0, 10);
+      const next: Record<string, string> = {};
+      for (const [k, v] of Object.entries(prev)) if (v > now) next[k] = v;
+      next[id] = until;
+      try { localStorage.setItem(SNOOZE_KEY, JSON.stringify(next)); } catch { /* private mode */ }
+      return next;
+    });
+  }, []);
+  return [active, snooze];
+}
