@@ -17,9 +17,8 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { formatAmount, formatWhole } from './format';
+import { formatAmount, formatWhole, type HeatCell, type SankeyData } from '../core';
 import { cssVar, useStore } from './store';
-import type { HeatCell, SankeyData } from './analytics';
 
 /**
  * Chart primitives.

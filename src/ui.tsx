@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { CURRENCY, formatAmount } from './format';
+import { CURRENCY, formatAmount } from '../core';
 
 /** A ruled section: hairline above, small caps title, optional action on the right. */
 export function Section({

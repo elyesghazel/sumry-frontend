@@ -1,9 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { api, type Category, type ImportPreview, type MatchType, type Rule, type RuleApplyResult, type Statement } from '../api';
+import {
+  type Category,
+  type ImportPreview,
+  type MatchType,
+  type Rule,
+  type RuleApplyResult,
+  type Statement,
+  formatAmount,
+  formatShortDate,
+  isoDay,
+} from '../../core';
+import { api } from '../api';
 import { categoryColor, useStore, type Route } from '../store';
 import { Empty, ErrorLine, Field, Modal, Section, Swatch, Switch, Tag } from '../ui';
 import { AccountSelect, CategoryEditor, CategorySelect } from '../components/Editor';
-import { formatAmount, formatShortDate, isoDay } from '../format';
 
 type Tab = 'rules' | 'import' | 'export' | 'statement' | 'categories' | 'account';
 const TABS: { key: Tab; label: string }[] = [
@@ -207,7 +217,7 @@ function Import() {
     if (!token || !accountId || !csv.trim()) return;
     setBusy(true); setError(null); setDone(null);
     try {
-      const p = await api.importPreview(token, accountId, csv);
+      const p = await api.importPreview(token, { accountId, csv });
       setPreview(p);
       const c: typeof choices = {};
       for (const r of p.rows) c[r.line] = { include: !r.duplicate, category: r.categoryLabel ?? '' };

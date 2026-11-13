@@ -2,8 +2,25 @@ import { useMemo, useState } from 'react';
 import { categoryColor, cssVar, href, useStore } from '../store';
 import { BarRow, Chips, Delta, DeltaPercent, Empty, Num, Section, Stat, Swatch } from '../ui';
 import { FlowSankey, Heatmap, MultiLine, PairedBars, TrendArea, TrendLine } from '../charts';
-import { CURRENCY, formatAmount, isTransfer, signOf, baseOf } from '../format';
-import { calendarHeat, categoryBreakdown, inRange, monthlySeries, pctChange, previousRange, resolveRange, sankeyData, spendBuckets, totals, yearOverYear, TIMEFRAMES } from '../analytics';
+import {
+  CURRENCY,
+  formatAmount,
+  isTransfer,
+  signOf,
+  baseOf,
+  calendarHeat,
+  categoryBreakdown,
+  inRange,
+  monthlySeries,
+  pctChange,
+  previousRange,
+  resolveRange,
+  sankeyData,
+  spendBuckets,
+  totals,
+  yearOverYear,
+  TIMEFRAMES,
+} from '../../core';
 
 /** The deeper cut: flows, rhythms, per-category trends and running comparisons. */
 export function Insights() {
