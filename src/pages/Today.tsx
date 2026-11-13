@@ -402,8 +402,11 @@ function ProjectionBars({ projection, occurrences }: { projection: ReturnType<ty
   const pts = projection.points;
   if (!pts.length) return null;
   const values = pts.map((p) => p.balance);
-  const max = Math.max(...values, 0);
-  const min = Math.min(...values, 0);
+  // Scale from a floor below the lowest day so a dip is visible; zero stays the floor
+  // once the line goes negative.
+  const max = Math.max(...values);
+  const lo = Math.min(...values);
+  const min = lo < 0 ? lo : Math.max(0, lo - (max - lo) * 0.8 - Math.abs(max) * 0.05);
   const span = max - min || 1;
   const incomeDays = new Set(occurrences.filter((o) => o.kind === 'INCOME').map((o) => dayOf(o.date)));
   const firstIncome = occurrences.find((o) => o.kind === 'INCOME');

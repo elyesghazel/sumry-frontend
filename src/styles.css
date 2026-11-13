@@ -672,3 +672,5 @@ a.panel.block-link:hover { border-color: var(--rule-strong); }
   .palette-foot { display: none; }
   .bulkbar { top: 60px; }
 }
+.occ.later .occ-actions { opacity: 0.55; }
+.occ.later:hover .occ-actions { opacity: 1; }

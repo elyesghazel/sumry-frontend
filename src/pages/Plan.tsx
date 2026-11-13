@@ -80,8 +80,12 @@ export function Plan({ route }: { route: Route }) {
     setPlannedEditor(null);
   };
 
-  const occRow = (o: Occurrence) => (
-    <div className="occ" key={`${o.plannedId}-${o.date}`}>
+  const soonUntil = isoDay(addDays(new Date(), 7));
+  const occRow = (o: Occurrence) => {
+    // Due within a week: full actions. Further out: the same, but quiet.
+    const soon = o.overdue || dayOf(o.date) <= soonUntil;
+    return (
+    <div className={`occ ${soon ? '' : 'later'}`} key={`${o.plannedId}-${o.date}`}>
       <span className="dot-row grow" style={{ minWidth: 0 }}>
         <Swatch color={o.kind === 'INCOME' ? 'var(--pos)' : o.kind === 'TRANSFER_OUT' ? 'var(--ink-3)' : o.categoryColor ?? 'var(--ink-3)'} />
         <span className="truncate">
@@ -92,12 +96,13 @@ export function Plan({ route }: { route: Route }) {
       </span>
       <span className={`num money occ-amt ${o.kind === 'INCOME' ? 'pos' : ''}`}>{o.kind === 'INCOME' ? '+' : o.kind === 'TRANSFER_OUT' ? '⇄ ' : '−'}{formatAmount(o.amount)}</span>
       <span className="occ-actions">
-        <button className="btn sm primary" onClick={() => book(o)} title="Book it now">Book</button>
-        <button className="btn sm" onClick={() => skip(o)} title="Let this one pass unbooked">Skip</button>
-        <button className="btn sm" onClick={() => setPostponing(o)} title="Move this one to another day">Postpone</button>
+        <button className={`btn sm ${soon ? 'primary' : 'ghost'}`} onClick={() => book(o)} title="Book it now">Book</button>
+        <button className={`btn sm ${soon ? '' : 'ghost'}`} onClick={() => skip(o)} title="Let this one pass unbooked">Skip</button>
+        <button className={`btn sm ${soon ? '' : 'ghost'}`} onClick={() => setPostponing(o)} title="Move this one to another day">Postpone</button>
       </span>
     </div>
-  );
+    );
+  };
 
   const dayKeys = [...byDay.keys()].sort((a, b) => (a === 'overdue' ? -1 : b === 'overdue' ? 1 : a.localeCompare(b)));
   const listDays = day ? dayKeys.filter((k) => k === day) : dayKeys;

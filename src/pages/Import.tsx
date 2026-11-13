@@ -37,8 +37,14 @@ const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB
  * line the account up with what the statement says it closed at.
  */
 export function Import({ route }: { route: Route }) {
-  const { accounts, categories, token, refresh, toast } = useStore();
-  const [accountId, setAccountId] = useState(route.params.get('account') ?? accounts.find((a) => a.spending !== false)?.id ?? accounts[0]?.id ?? '');
+  const { accounts, categories, transactions, token, refresh, toast } = useStore();
+  // Default to the spending account with the most entries: the one statements usually come from.
+  const busiest = useMemo(() => {
+    const n = new Map<string, number>();
+    for (const t of transactions) if (t.userAccountId) n.set(t.userAccountId, (n.get(t.userAccountId) ?? 0) + 1);
+    return [...accounts].filter((a) => a.spending !== false).sort((a, b) => (n.get(b.id) ?? 0) - (n.get(a.id) ?? 0))[0]?.id;
+  }, [accounts, transactions]);
+  const [accountId, setAccountId] = useState(route.params.get('account') ?? busiest ?? accounts[0]?.id ?? '');
   const [file, setFile] = useState<Picked | null>(null);
   const [paste, setPaste] = useState('');
   const [showPaste, setShowPaste] = useState(false);
@@ -192,9 +198,9 @@ export function Import({ route }: { route: Route }) {
       ) : null}
 
       {preview ? (
-        <Section span="" title="2 · Check and book" action={
+        <Section span="" title="2 · Check and book" action={preview.rows.length ? (
           <button className="btn primary sm" onClick={commit} disabled={busy || !selected.length || missing > 0}>{busy ? 'Booking…' : `Book ${selected.length}`}</button>
-        }>
+        ) : null}>
           <div className="import-summary">
             <div><span className="caption">Format</span><span>{preview.format}</span></div>
             {preview.statementFrom || preview.statementTo ? <div><span className="caption">Period</span><span>{preview.statementFrom ? formatShortDate(preview.statementFrom) : '…'} – {preview.statementTo ? formatShortDate(preview.statementTo) : '…'}</span></div> : null}
