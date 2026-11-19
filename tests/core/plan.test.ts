@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ApiError, aiAllowed, blockedBy, createApi, isLimited, planLimitOf, type Profile } from '../../core';
+import { ApiError, aiAllowed, blockedBy, createApi, isLimited, planLimitOf, showUpgrade, type Profile } from '../../core';
 
 const profile = (over: Partial<Profile> = {}): Profile => ({
   id: 'u',
@@ -40,6 +40,14 @@ describe('plan limits', () => {
     const p = profile({ plan: 'PREMIUM', limits: { maxAccounts: null, statementImport: true, statementEmail: true } });
     expect(isLimited(p)).toBe(false);
     expect(blockedBy(p, 'accounts', 10)).toBe(false);
+  });
+
+  it('offers the upgrade only to free users with limits on', () => {
+    expect(showUpgrade(profile())).toBe(true);
+    expect(showUpgrade(profile({ plan: 'PREMIUM' }))).toBe(false);
+    expect(showUpgrade(selfHosted)).toBe(false);
+    expect(showUpgrade(profile({ limitsEnabled: false }))).toBe(false);
+    expect(showUpgrade(null)).toBe(false);
   });
 
   it('reads aiEnabled, falling back for older backends', () => {

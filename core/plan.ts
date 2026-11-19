@@ -11,6 +11,21 @@ export const PREMIUM_PRICES = [
   { label: 'Lifetime', price: '29 CHF once' },
 ] as const;
 
+/** The one price as a short label, e.g. for the sidebar entry. */
+export const PREMIUM_PRICE = PREMIUM_PRICES[0].price;
+
+/** What Premium adds on top of the free plan. */
+export const PREMIUM_UNLOCKS = [
+  'Unlimited accounts',
+  'Statement import (PDF, camt.053, CSV)',
+  'The monthly statement by email',
+] as const;
+
+/** Whether to offer the upgrade: free users on an instance that enforces plans, nobody else. */
+export function showUpgrade(p: Profile | null | undefined): boolean {
+  return isLimited(p);
+}
+
 /** The limit a failed call ran into, or null when it was not a plan_limit 403. */
 export function planLimitOf(e: unknown): PlanLimitName | null {
   if (!(e instanceof ApiError) || e.status !== 403) return null;
