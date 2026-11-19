@@ -7,6 +7,7 @@ import {
   formatDayHeading,
   formatLongDate,
   formatWhole,
+  isAdmin,
   isTransfer,
   signOf,
 } from '../../core';
@@ -25,6 +26,8 @@ export const NAV: { key: Page; label: string; key2: string; icon: string }[] = [
 const GEAR =
   'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19 12a7 7 0 0 0-.1-1.2l2-1.5-2-3.5-2.4.9a7 7 0 0 0-2-1.2L14 3h-4l-.5 2.5a7 7 0 0 0-2 1.2l-2.4-.9-2 3.5 2 1.5A7 7 0 0 0 5 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.5 2.4-.9a7 7 0 0 0 2 1.2L10 21h4l.5-2.5a7 7 0 0 0 2-1.2l2.4.9 2-3.5-2-1.5c.1-.4.1-.8.1-1.2z';
 
+const SHIELD = 'M12 3 5 6v5c0 4.5 3 8.3 7 10 4-1.7 7-5.5 7-10V6z';
+
 /** Which nav item a page belongs to. */
 export const sectionOf = (page: Page): Page => (page === 'import' ? 'activity' : page === 'account' ? 'today' : page);
 
@@ -38,7 +41,7 @@ export function Icon({ d, size = 18 }: { d: string; size?: number }) {
 
 /** Left rail on wide screens: the four places, the accounts, settings at the bottom. */
 export function Sidebar({ page, accountId }: { page: Page; accountId?: string | null }) {
-  const { accounts, loading, refresh, privacy, setPrivacy } = useStore();
+  const { accounts, loading, refresh, privacy, setPrivacy, profile } = useStore();
   const section = sectionOf(page);
   return (
     <aside className="side" aria-label="Sections">
@@ -68,6 +71,11 @@ export function Sidebar({ page, accountId }: { page: Page; accountId?: string | 
           <span className="row" style={{ gap: 9 }}><Icon d={GEAR} size={16} />Settings</span>
           <span className="kbd">G S</span>
         </a>
+        {isAdmin(profile) ? (
+          <a href={href('admin')} aria-current={page === 'admin' ? 'page' : undefined}>
+            <span className="row" style={{ gap: 9 }}><Icon d={SHIELD} size={16} />Admin</span>
+          </a>
+        ) : null}
       </nav>
       <div className="row" style={{ gap: 4, padding: '6px 4px 0' }}>
         <button className="icon-btn" title="Refresh" aria-label="Refresh" onClick={() => refresh()} disabled={loading}>{loading ? <span className="spinner" /> : '↻'}</button>
