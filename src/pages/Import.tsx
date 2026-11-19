@@ -5,6 +5,7 @@ import {
   type ReconcileOffer,
   type StatementFileKind,
   MAX_IMPORT_BYTES,
+  aiAllowed,
   formatAmount,
   formatShortDate,
   formatSigned,
@@ -39,7 +40,7 @@ const kb = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB
  * line the account up with what the statement says it closed at.
  */
 export function Import({ route }: { route: Route }) {
-  const { accounts, categories, transactions, token, refresh, toast } = useStore();
+  const { accounts, categories, transactions, token, profile, refresh, toast } = useStore();
   // Default to the spending account with the most entries: the one statements usually come from.
   const busiest = useMemo(() => {
     const n = new Map<string, number>();
@@ -279,7 +280,7 @@ export function Import({ route }: { route: Route }) {
           {split.notes.length ? <ul className="notes small muted">{split.notes.slice(0, 8).map((n, i) => <li key={i}>{n}</li>)}</ul> : null}
           {split.diagnostics.map((d, i) => <DiagnosticsBlock key={i} text={d} />)}
 
-          {preview.aiCheckAvailable && openRows > 0 ? (
+          {preview.aiCheckAvailable && aiAllowed(profile) && openRows > 0 ? (
             <div className="ai-check">
               <div className="row-between wrap" style={{ gap: 10 }}>
                 <div className="small">
