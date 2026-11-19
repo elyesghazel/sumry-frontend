@@ -73,7 +73,7 @@ export function AccountDetail({ route }: { route: Route }) {
     if (!token || !Number.isFinite(value)) return;
     setBusy(true); setError(null);
     try {
-      await api.reconcileAccount(token, account.id, value, note.trim() || 'Abgleich');
+      await api.reconcileAccount(token, account.id, value, note.trim() || 'Balance adjustment');
       toast(Math.abs(diff) < 0.005 ? 'Marked as checked' : `Adjusted by ${formatSigned(diff)}`);
       setNote('');
       await refresh(['core']);
@@ -114,7 +114,7 @@ export function AccountDetail({ route }: { route: Route }) {
             </div>
             <div className="field grow">
               <label className="caption">Note</label>
-              <input className="input" placeholder="Abgleich" value={note} onChange={(e) => setNote(e.target.value)} />
+              <input className="input" placeholder="Balance adjustment" value={note} onChange={(e) => setNote(e.target.value)} />
             </div>
           </div>
           <div className="row-between" style={{ marginTop: 10 }}>

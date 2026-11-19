@@ -189,7 +189,7 @@ export function Import({ route }: { route: Route }) {
     if (!token || !offer || !done) return;
     setBusy(true);
     try {
-      await api.reconcileAccount(token, accountId, offer.statementBalance, 'Abgleich Kontoauszug');
+      await api.reconcileAccount(token, accountId, offer.statementBalance, 'Balance adjustment (statement)');
       toast(offer.matches ? 'Marked as checked' : `Balance set to ${formatAmount(offer.statementBalance)}`);
       setOffer(null);
       await refresh(['core']);
@@ -307,7 +307,7 @@ export function Import({ route }: { route: Route }) {
                   <div key={a.id} className="offer warn" style={{ marginTop: 10 }}>
                     <div className="small">
                       <strong>Adjustment would count twice:</strong>{' '}
-                      {t ? <>{t.description || 'Abgleich'} · {formatShortDate(t.date)} · <span className="num money">{formatSigned(t.kind === 'INCOME' ? t.amount : -t.amount)}</span></> : 'an adjustment'}
+                      {t ? <>{t.description || 'Balance adjustment'} · {formatShortDate(t.date)} · <span className="num money">{formatSigned(t.kind === 'INCOME' ? t.amount : -t.amount)}</span></> : 'an adjustment'}
                     </div>
                     <div className="tiny faint" style={{ marginTop: 2 }}>{a.note}</div>
                     <div className="row" style={{ gap: 8, marginTop: 8 }}>

@@ -128,7 +128,7 @@ export function PlannedEditor({ editing, prefill, onClose }: { editing: Planned 
         {(['EXPENSE', 'INCOME', 'TRANSFER'] as const).map((m) => <button key={m} aria-pressed={mode === m} onClick={() => setMode(m)}>{m === 'EXPENSE' ? 'Expense' : m === 'INCOME' ? 'Income' : 'Transfer'}</button>)}
       </div>
       <div className="field-row">
-        <Field label="Name" grow><input className="input lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={mode === 'INCOME' ? 'Lohn' : mode === 'TRANSFER' ? 'Sparen' : 'Miete'} autoFocus /></Field>
+        <Field label="Name" grow><input className="input lg" value={name} onChange={(e) => setName(e.target.value)} placeholder={mode === 'INCOME' ? 'Salary' : mode === 'TRANSFER' ? 'Savings' : 'Rent'} autoFocus /></Field>
         <Field label={`Amount · ${accounts.find((a) => a.id === accountId)?.currency ?? CURRENCY}`} style={{ flex: '0 0 150px' }}><input className="input serif num" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
       </div>
       <div className="field-row">
@@ -194,7 +194,7 @@ export function GoalEditor({ editing, onClose }: { editing: Goal | null; onClose
       <button className="btn primary" onClick={save} disabled={!valid || busy}>{busy ? 'Saving…' : 'Save'}</button>
     </>}>
       <div className="field-row">
-        <Field label="Name" grow><input className="input lg" value={name} onChange={(e) => setName(e.target.value)} placeholder="Notgroschen" autoFocus /></Field>
+        <Field label="Name" grow><input className="input lg" value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" autoFocus /></Field>
         <Field label={`Target · ${CURRENCY}`} style={{ flex: '0 0 150px' }}><input className="input serif num" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} /></Field>
       </div>
       <div className="field-row">
