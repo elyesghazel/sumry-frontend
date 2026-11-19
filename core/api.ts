@@ -66,9 +66,31 @@ export type ApiConfig = {
   baseUrl: string;
   /** Defaults to the global fetch. */
   fetch?: FetchLike;
-  /** Called on every 401 before the error is thrown, e.g. to drop a dead session. */
-  onUnauthorized?: (path: string) => void;
+  /**
+   * Called on every 401 before the error is thrown, e.g. to drop a dead session.
+   * `info` tells a session that ended apart from a wrong password on a call that checks one.
+   */
+  onUnauthorized?: (path: string, info: UnauthorizedInfo) => void;
 };
+
+export type UnauthorizedInfo = {
+  method: string;
+  /** The token the request was sent with, so a late answer for an old session can be ignored. */
+  token: string | null;
+  /** The parsed error body, or null. */
+  body: unknown;
+};
+
+/**
+ * Calls that answer 401 for a wrong password or reset token rather than a dead session:
+ * sign-in, signup, the password reset, changing the password and deleting the account.
+ */
+export function checksCredentials(path: string, method: string): boolean {
+  const p = path.split('?')[0];
+  if (p === '/api/users/login' || p === '/api/users/register' || p === '/api/users/password-reset') return true;
+  if (p === '/api/users/password' && method === 'PUT') return true;
+  return p === '/api/users/me' && method === 'DELETE';
+}
 
 export class ApiError extends Error {
   readonly status: number;
@@ -140,8 +162,8 @@ export function createApi(config: ApiConfig) {
 
     const text = await res.text();
     if (!res.ok) {
-      if (res.status === 401) config.onUnauthorized?.(path);
       const errBody = text ? safeJson(text) : null;
+      if (res.status === 401) config.onUnauthorized?.(path, { method, token: token ?? null, body: errBody });
       throw new ApiError(res.status, messageFrom(res.status, errBody), errBody);
     }
     if (opts.raw) return text as unknown as T;
