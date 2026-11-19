@@ -272,7 +272,7 @@ export function ReconcileEditor({ accountId, onClose }: { accountId: string; onC
     setBusy(true);
     setError(null);
     try {
-      await api.reconcileAccount(token, accountId, value, note.trim() || 'Abgleich');
+      await api.reconcileAccount(token, accountId, value, note.trim() || 'Balance adjustment');
       toast('Adjusted');
       await refresh(['core']);
       onClose();
@@ -304,7 +304,7 @@ export function ReconcileEditor({ accountId, onClose }: { accountId: string; onC
           <input className="input serif num" inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} autoFocus />
         </Field>
         <Field label="Note" grow>
-          <input className="input lg" placeholder="Abgleich" value={note} onChange={(e) => setNote(e.target.value)} />
+          <input className="input lg" placeholder="Balance adjustment" value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
       </div>
       {Number.isFinite(diff) ? (
@@ -471,7 +471,7 @@ export function CategoryEditor({ editing, onClose }: { editing: Category | null;
         </Field>
       </div>
       <Field label="Group">
-        <input className="input" list="cat-groups" value={group} onChange={(e) => setGroup(e.target.value)} placeholder="Essen, Wohnen, …" />
+        <input className="input" list="cat-groups" value={group} onChange={(e) => setGroup(e.target.value)} placeholder="Food, Housing, …" />
         <datalist id="cat-groups">{groups.map((g) => <option key={g} value={g} />)}</datalist>
       </Field>
       <ErrorLine>{error}</ErrorLine>
