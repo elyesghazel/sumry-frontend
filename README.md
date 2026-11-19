@@ -125,9 +125,8 @@ Without the files nothing changes. The backend's `deploy/legal/` has example tem
 ## Hosted
 
 Elyes Ghazel also runs a hosted Sumry. Free covers 2 accounts, without statement import or
-the statement email;
-Premium (2 CHF a month or 18 CHF a year) and Founder Lifetime (29 CHF, first 50 users)
-unlock everything. Payment is manual via TWINT for now. Self-hosted, every feature is free.
+the statement email; Premium unlocks everything for 29 CHF once, no subscription.
+Payment is manual via TWINT or PayPal for now. Self-hosted, every feature is free.
 Details are in the [backend README](https://github.com/elyesghazel/sumry-backend#hosted).
 
 ## Configuration
