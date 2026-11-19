@@ -473,4 +473,83 @@ export type Profile = Me & {
   limits: PlanLimits;
   /** On the AI allowlist and the Claude bridge is configured. */
   aiEnabled: boolean;
+  /** Missing on older backends. Only decides whether admin screens are shown; the server checks anyway. */
+  role?: Role;
 };
+
+// ---- admin (/api/admin, role ADMIN). Counts and profile fields only, never finance data.
+
+export type Role = 'USER' | 'ADMIN' | 'DEBUG';
+
+export type AdminUser = {
+  id: string;
+  username: string;
+  email: string;
+  role: Role;
+  /** The stored plan, whether or not limits are enabled. */
+  plan: Plan;
+  status: 'active' | 'locked';
+  createdAt: string | null;
+  lastLoginAt: string | null;
+  lockedAt: string | null;
+  /** Last characters of the invite code used to sign up. */
+  inviteCodeHint: string | null;
+  accountCount: number;
+  transactionCount: number;
+};
+
+export type AdminStats = {
+  totalUsers: number;
+  lockedUsers: number;
+  premiumUsers: number;
+  /** 12 ISO weeks, oldest first; the last one is the current week. */
+  signupsPerWeek: { weekStart: string; signups: number }[];
+  databaseSizeBytes: number;
+};
+
+export type AuditAction =
+  | 'PLAN_SET'
+  | 'LOCK'
+  | 'UNLOCK'
+  | 'DELETE_USER'
+  | 'PASSWORD_RESET'
+  | 'INVITE_CREATE'
+  | 'INVITE_REVOKE';
+
+export type AuditEntry = {
+  id: string;
+  action: AuditAction;
+  adminId: string;
+  /** null once the admin's account is gone. */
+  adminUsername: string | null;
+  targetUserId: string | null;
+  /** null for invite rows and for deleted users. */
+  targetUsername: string | null;
+  detail: Record<string, unknown>;
+  createdAt: string;
+};
+
+export type AuditPage = { items: AuditEntry[]; page: number; size: number; totalItems: number; totalPages: number };
+
+export type PlanSetResult = { userId: string; plan: Plan; effectivePlan: Plan; limits: PlanLimits };
+
+/** The token is returned only by this call; nothing can read it again. */
+export type PasswordResetToken = { userId: string; token: string; expiresAt: string };
+
+export type InviteStatus = 'active' | 'used' | 'revoked' | 'expired';
+
+export type Invite = {
+  id: string;
+  /** The full code, only in the response to creating it. */
+  code: string | null;
+  codeHint: string;
+  note: string | null;
+  status: InviteStatus;
+  createdAt: string;
+  expiresAt: string | null;
+  usedAt: string | null;
+  revokedAt: string | null;
+};
+
+/** `expiresInDays` 1 to 365, or null for a code that never expires. */
+export type InviteInput = { expiresInDays?: number | null; note?: string | null };
