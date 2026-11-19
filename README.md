@@ -114,6 +114,14 @@ docker compose up -d --build    # serves on http://localhost:8080 (SUMRY_WEB_POR
 origin, build with `VITE_API_URL` and list this origin in the backend's
 `SUMRY_CORS_ALLOWED_ORIGINS`, otherwise the browser blocks every request.
 
+### Privacy policy and imprint
+
+Legal texts belong to whoever runs the instance, so they are not part of the image. Mount
+`privacy.md` and `imprint.md` (markdown, no raw HTML) into `/usr/share/nginx/html/legal/`.
+Each file that exists gets a page (`/privacy`, `/imprint`) and a link on the sign-in screen
+and in Settings; with `privacy.md` present, signup also asks to confirm it was read.
+Without the files nothing changes. The backend's `deploy/legal/` has example templates.
+
 ## Hosted
 
 Elyes Ghazel also runs a hosted Sumry. Free covers 2 accounts, without statement import or
