@@ -6,11 +6,13 @@ import {
   type StatementFileKind,
   MAX_IMPORT_BYTES,
   aiAllowed,
+  blockedBy,
   formatAmount,
   formatShortDate,
   formatSigned,
   importFormatFor,
   maskIbansIn,
+  planLimitOf,
   reconcileOffer,
   rowsForCheck,
   splitImportWarnings,
@@ -21,6 +23,7 @@ import { href, useStore, type Route } from '../store';
 import { ErrorLine, Field, Section, Tag } from '../ui';
 import { PageHead } from '../components/Nav';
 import { AccountSelect, CategorySelect } from '../components/Editor';
+import { PlanNotice } from '../components/PlanNotice';
 
 type Picked = { name: string; kind: StatementFileKind; size: number; csv?: string; base64?: string };
 
@@ -64,6 +67,13 @@ export function Import({ route }: { route: Route }) {
   const [checking, setChecking] = useState(false);
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const account = accounts.find((a) => a.id === accountId);
+  const [limitHit, setLimitHit] = useState(false);
+  const importBlocked = blockedBy(profile, 'statement_import') || limitHit;
+  /** A plan_limit 403 becomes the plan note instead of an error line. */
+  const fail = (e: unknown, fallback: string) => {
+    if (planLimitOf(e)) { setLimitHit(true); setError(null); return; }
+    setError(e instanceof Error ? e.message : fallback);
+  };
 
   const pick = async (f: File | null) => {
     setError(null); setPreview(null); setDone(null); setOffer(null);
@@ -99,7 +109,7 @@ export function Import({ route }: { route: Route }) {
       for (const r of p.rows) c[r.line] = { include: !r.duplicate, category: r.categoryLabel ?? '' };
       setChoices(c);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not read the file');
+      fail(e, 'Could not read the file');
       setPreview(null);
     } finally {
       setBusy(false);
@@ -131,7 +141,7 @@ export function Import({ route }: { route: Route }) {
       }
       setChoices(next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'The Claude check failed');
+      fail(e, 'The Claude check failed');
     } finally {
       setChecking(false);
     }
@@ -169,7 +179,7 @@ export function Import({ route }: { route: Route }) {
       setDoneTo(preview.statementTo ?? null);
       setPreview(null); setFile(null); setPaste(''); setCheck(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Import failed');
+      fail(e, 'Import failed');
     } finally {
       setBusy(false);
     }
@@ -207,7 +217,7 @@ export function Import({ route }: { route: Route }) {
           <Field label="Statement file" grow>
             <input className="input" type="file" accept=".pdf,.xml,.csv,.txt,application/pdf,application/xml,text/xml,text/csv,text/plain" onChange={(e) => pick(e.target.files?.[0] ?? null)} />
           </Field>
-          <button className="btn primary" onClick={run} disabled={busy || !accountId || (!file && !paste.trim())}>{busy && !preview ? 'Reading…' : 'Preview'}</button>
+          <button className="btn primary" onClick={run} disabled={busy || importBlocked || !accountId || (!file && !paste.trim())}>{busy && !preview ? 'Reading…' : 'Preview'}</button>
         </div>
         {file ? <p className="small muted" style={{ marginTop: 8 }}><Tag>{file.kind.toUpperCase()}</Tag> {file.name} · {kb(file.size)}{account ? ` → ${account.accountName}` : ''}</p> : null}
         <button className="link small" style={{ marginTop: 10 }} onClick={() => setShowPaste((s) => !s)}>{showPaste ? 'Hide' : '…or paste CSV text'}</button>
@@ -215,6 +225,7 @@ export function Import({ route }: { route: Route }) {
           <textarea className="input" style={{ marginTop: 8 }} value={paste} onChange={(e) => { setPaste(e.target.value); setFile(null); }} placeholder="Datum;Avisierungstext;Gutschrift in CHF;Lastschrift in CHF;…" />
         ) : null}
         <p className="tiny faint" style={{ marginTop: 10 }}>Nothing is booked until you confirm. A row counts as already logged when an entry with the same amount sits within 3 days of it, or when it is two or three entries added up (a top-up and its fee). IBANs in booking texts are masked.</p>
+        {importBlocked ? <PlanNotice limit="statement_import" force={limitHit} /> : null}
         <ErrorLine>{error}</ErrorLine>
       </Section>
 
