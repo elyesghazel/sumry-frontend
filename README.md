@@ -43,20 +43,23 @@ Every chart carries a hover layer, because a plot you can't interrogate is a pic
 
 ```bash
 npm install
-npm run dev            # VITE_API_URL overrides the API, defaults to production
+npm run dev            # proxies /api to http://localhost:48090 (SUMRY_API_PROXY overrides)
 ```
 
 ## Deploying
 
-Built and served by nginx behind Traefik, as `web-sumry`. `VITE_API_URL` is baked in at
-image build time, so changing it means rebuilding:
+The page calls the API same-origin at `/api`, so whatever sits in front of it routes
+`/api` to the backend and everything else to this container. `VITE_API_URL` overrides
+that with an absolute origin; it is baked in at image build time, so changing it means
+rebuilding.
 
 ```bash
-docker compose up -d --build
+docker compose up -d --build    # serves on http://localhost:8080 (SUMRY_WEB_PORT)
 ```
 
-The API must list this origin in `SUMRY_CORS_ALLOWED_ORIGINS`, otherwise the browser
-blocks every request.
+Prebuilt images are published to `ghcr.io/elyesghazel/sumry-frontend`. A Traefik setup
+is in `deploy/traefik.example.yml`. If the API is on another origin, it must list this
+one in `SUMRY_CORS_ALLOWED_ORIGINS`, otherwise the browser blocks every request.
 
 ## Layout
 
