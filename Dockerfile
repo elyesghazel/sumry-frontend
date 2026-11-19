@@ -16,4 +16,6 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Empty on purpose: operators mount their own privacy.md and imprint.md here.
+RUN mkdir -p /usr/share/nginx/html/legal
 EXPOSE 80
