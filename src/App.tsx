@@ -8,11 +8,12 @@ import { Plan } from './pages/Plan';
 import { Insights } from './pages/Insights';
 import { Settings } from './pages/Settings';
 import { AccountDetail } from './pages/AccountDetail';
+import { Admin } from './pages/Admin';
 import { ResetPassword } from './pages/Reset';
 import { BottomTabs, MobileTop, NAV, Palette, ShellContext, Sidebar, useGoKeys, type ShellApi } from './components/Nav';
 import { TransactionEditor } from './components/Editor';
 
-const TITLES: Record<string, string> = { import: 'Import', account: 'Account', settings: 'Settings' };
+const TITLES: Record<string, string> = { import: 'Import', account: 'Account', settings: 'Settings', admin: 'Admin' };
 
 function Shell() {
   const { status, error, accounts } = useStore();
@@ -68,6 +69,7 @@ function Shell() {
             {route.page === 'insights' ? <Insights route={route} /> : null}
             {route.page === 'settings' ? <Settings route={route} /> : null}
             {route.page === 'account' ? <AccountDetail route={route} /> : null}
+            {route.page === 'admin' ? <Admin route={route} /> : null}
           </main>
         </div>
       </div>

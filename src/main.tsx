@@ -3,6 +3,9 @@ import { createRoot } from 'react-dom/client';
 // JetBrains Mono is self-hosted from src/fonts via styles.css, no third-party requests.
 import './styles.css';
 import App from './App.tsx';
+import { normalizePath } from './store';
+
+normalizePath();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

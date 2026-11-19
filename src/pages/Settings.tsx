@@ -11,6 +11,7 @@ import {
   formatAmount,
   formatLongDate,
   formatShortDate,
+  isAdmin,
   isoDay,
 } from '../../core';
 import { api } from '../api';
@@ -425,7 +426,7 @@ function Look() {
 // ------------------------------------------------------------------ account
 
 function AccountSettings() {
-  const { user, token, signOut, adoptToken, toast, preferences, refresh } = useStore();
+  const { user, token, signOut, adoptToken, toast, preferences, refresh, profile } = useStore();
   const [cur, setCur] = useState('');
   const [nw, setNw] = useState('');
   const [nw2, setNw2] = useState('');
@@ -456,6 +457,7 @@ function AccountSettings() {
           <button className="btn ghost" onClick={() => { if (window.confirm('Sign out on every device, including the phone?')) signOut(true); }}>Sign out everywhere</button>
         </div>
         <p className="tiny faint" style={{ marginTop: 12 }}>Tokens live 30 days but can be revoked: signing out ends this one immediately; “everywhere” invalidates all of them.</p>
+        {isAdmin(profile) ? <p className="small" style={{ marginTop: 12 }}><a className="link" href={href('admin')}>Admin: users, invites, audit log</a></p> : null}
       </Section>
       <Section span="span-6" title="Change password">
         <div className="stack" style={{ gap: 10 }}>

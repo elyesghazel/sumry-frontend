@@ -352,9 +352,23 @@ export function categoryColor(key: string, explicit?: string | null): string {
 
 // ------------------------------------------------------------------- routing
 
-export type Page = 'today' | 'activity' | 'import' | 'plan' | 'insights' | 'settings' | 'account';
+export type Page = 'today' | 'activity' | 'import' | 'plan' | 'insights' | 'settings' | 'account' | 'admin';
 
-const PAGES: Page[] = ['today', 'activity', 'import', 'plan', 'insights', 'settings', 'account'];
+const PAGES: Page[] = ['today', 'activity', 'import', 'plan', 'insights', 'settings', 'account', 'admin'];
+
+/** Pages that also answer on a real path, e.g. `/admin`; they are moved into the hash. */
+const PATH_PAGES: Page[] = ['admin'];
+
+/**
+ * Runs once before the first render: `/admin` becomes `/#/admin`, so a typed or bookmarked
+ * path lands on the hash route. `/reset` stays a path (see isResetPath).
+ */
+export function normalizePath(): void {
+  const path = window.location.pathname.replace(/\/+$/, '').slice(1);
+  if ((PATH_PAGES as string[]).includes(path)) {
+    window.history.replaceState(null, '', `/${window.location.search}#/${path}`);
+  }
+}
 
 /** The public password reset page lives at `/reset?token=...`, outside the signed-in shell. */
 export const isResetPath = (): boolean => window.location.pathname.replace(/\/+$/, '') === '/reset';
