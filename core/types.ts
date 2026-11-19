@@ -442,3 +442,29 @@ export type Me = { id: string; username: string; email: string };
 export type Session = { token: string; email: string };
 
 export type ShortcutToken = { token: string; expiresAt: string };
+
+// ---- plan (GET /api/users/me)
+
+export type Plan = 'FREE' | 'PREMIUM';
+
+/** The `limit` field of a 403 `{"error":"plan_limit"}` response. */
+export type PlanLimitName = 'accounts' | 'statement_import' | 'statement_email';
+
+/** What the effective plan allows. `maxAccounts: null` = unlimited. */
+export type PlanLimits = {
+  maxAccounts: number | null;
+  statementImport: boolean;
+  statementEmail: boolean;
+};
+
+/**
+ * GET /api/users/me: the user plus what this instance lets them do. With
+ * `limitsEnabled: false` (self-hosted default) the plan is always PREMIUM.
+ */
+export type Profile = Me & {
+  plan: Plan;
+  limitsEnabled: boolean;
+  limits: PlanLimits;
+  /** On the AI allowlist and the Claude bridge is configured. */
+  aiEnabled: boolean;
+};
