@@ -1,4 +1,4 @@
-import { createApi } from '../core';
+import { createApi, type UnauthorizedInfo } from '../core';
 
 /**
  * The web binding of the shared Sumry client (core/api.ts).
@@ -9,4 +9,18 @@ import { createApi } from '../core';
  */
 export const API_URL: string = (import.meta.env.VITE_API_URL as string | undefined) ?? '';
 
-export const api = createApi({ baseUrl: API_URL });
+type UnauthorizedListener = (path: string, info: UnauthorizedInfo) => void;
+const unauthorizedListeners = new Set<UnauthorizedListener>();
+
+/** Hears every 401 the API answers; returns the unsubscribe. The store uses it to end a dead session. */
+export function onUnauthorized(listener: UnauthorizedListener): () => void {
+  unauthorizedListeners.add(listener);
+  return () => { unauthorizedListeners.delete(listener); };
+}
+
+export const api = createApi({
+  baseUrl: API_URL,
+  onUnauthorized: (path, info) => {
+    for (const listener of unauthorizedListeners) listener(path, info);
+  },
+});
