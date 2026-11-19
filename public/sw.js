@@ -1,6 +1,6 @@
 /* Sumry service worker: the shell is cached so the app opens instantly and offline;
  * the API is never cached, because a stale balance is worse than no balance. */
-const VERSION = 'sumry-v1';
+const VERSION = 'sumry-v2';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -16,6 +16,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
+  // A same-origin API is still never cached.
+  if (url.pathname.startsWith('/api/')) return;
   // Hashed assets: cache first, they never change under the same name.
   if (url.pathname.startsWith('/assets/')) {
     event.respondWith(caches.open(VERSION).then(async (c) => (await c.match(event.request)) ?? fetch(event.request).then((r) => { c.put(event.request, r.clone()); return r; })));
