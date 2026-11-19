@@ -6,10 +6,12 @@ import {
   formatAmount,
   isTransfer,
   isoDay,
+  planLimitOf,
 } from '../../core';
 import { api } from '../api';
 import { useStore } from '../store';
 import { ErrorLine, Field, Modal, Switch } from '../ui';
+import { PlanNotice } from './PlanNotice';
 
 const parseNum = (s: string) => Number.parseFloat(s.replace(/'/g, '').replace(',', '.'));
 
@@ -328,6 +330,7 @@ export function AccountEditor({ editing, onClose }: { editing: Account | null; o
   const [balance, setBalance] = useState('0.00');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [limitHit, setLimitHit] = useState(false);
 
   const submit = async () => {
     if (!token || !name.trim()) return;
@@ -340,7 +343,8 @@ export function AccountEditor({ editing, onClose }: { editing: Account | null; o
       await refresh(['core']);
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not save');
+      if (planLimitOf(e)) setLimitHit(true);
+      else setError(e instanceof Error ? e.message : 'Could not save');
     } finally {
       setBusy(false);
     }
@@ -389,6 +393,7 @@ export function AccountEditor({ editing, onClose }: { editing: Account | null; o
         </Field>
       ) : null}
       <Switch checked={spending} onChange={setSpending} label={<span>Counts toward safe to spend <span className="faint">(turn off for savings)</span></span>} />
+      {limitHit ? <PlanNotice limit="accounts" force /> : null}
       <ErrorLine>{error}</ErrorLine>
     </Modal>
   );
