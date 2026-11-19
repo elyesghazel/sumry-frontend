@@ -26,8 +26,11 @@ import {
   balanceSeries,
   categoryMovers,
   formatSigned,
+  blockedBy,
+  planLimitOf,
   type Statement,
 } from '../../core';
+import { PlanNotice } from '../components/PlanNotice';
 
 type Tab = 'overview' | 'statement';
 
@@ -215,7 +218,9 @@ function Overview({ setTab }: { setTab: (t: Tab) => void }) {
 // --------------------------------------------------------------- statement
 
 function StatementView({ month0, setTab }: { month0: string | null; setTab: (t: Tab) => void }) {
-  const { token, toast, user } = useStore();
+  const { token, toast, user, profile } = useStore();
+  const [limitHit, setLimitHit] = useState(false);
+  const mailBlocked = blockedBy(profile, 'statement_email') || limitHit;
   const last = new Date(); last.setMonth(last.getMonth() - 1);
   const [month, setMonth] = useState(month0 ?? `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}`);
   const [s, setS] = useState<Statement | null>(null);
@@ -237,7 +242,7 @@ function StatementView({ month0, setTab }: { month0: string | null; setTab: (t: 
     if (!token) return;
     setSending(true);
     try { const r = await api.sendStatement(token, month, to.trim() || undefined); toast(`Sent to ${r.sentTo}`); }
-    catch (e) { toast(e instanceof Error ? e.message : 'Could not send'); }
+    catch (e) { if (planLimitOf(e)) setLimitHit(true); else toast(e instanceof Error ? e.message : 'Could not send'); }
     finally { setSending(false); }
   };
   const openHtml = async () => {
@@ -258,9 +263,10 @@ function StatementView({ month0, setTab }: { month0: string | null; setTab: (t: 
         <button className="btn" onClick={openHtml}>Open as page</button>
         <span className="grow" />
         <input className="input" type="email" placeholder={user?.email ?? 'your address'} value={to} onChange={(e) => setTo(e.target.value)} style={{ width: 220 }} aria-label="Send to" />
-        <button className="btn primary" onClick={send} disabled={mail === false || sending}>{sending ? 'Sending…' : 'Email it'}</button>
+        <button className="btn primary" onClick={send} disabled={mail === false || mailBlocked || sending}>{sending ? 'Sending…' : 'Email it'}</button>
       </div>
       {mail === false ? <p className="tiny faint">Email is off: the API has no SMTP configured. The statement still works here.</p> : null}
+      {mail !== false && mailBlocked ? <PlanNotice limit="statement_email" force={limitHit} /> : null}
       {busy && !s ? <Empty>Loading…</Empty> : s ? (
         <div className="grid">
           <Section span="span-4" title="Net">
