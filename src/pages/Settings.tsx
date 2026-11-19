@@ -6,7 +6,8 @@ import {
   type Rule,
   type RuleApplyResult,
   type ShortcutToken,
-  PREMIUM_PRICES,
+  PREMIUM_PRICE,
+  PREMIUM_UNLOCKS,
   blockedBy,
   formatAmount,
   formatLongDate,
@@ -478,15 +479,39 @@ function AccountSettings() {
 // -------------------------------------------------------------------- plan
 
 function PlanSettings() {
-  const { profile, accounts, refresh } = useStore();
+  const { profile, accounts, refresh, toast } = useStore();
   // An admin can switch the plan at any time; reload it when the tab opens.
   useEffect(() => { refresh(['profile']); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   if (!profile?.limitsEnabled) return null;
   const premium = profile.plan === 'PREMIUM';
   const { limits } = profile;
   const yes = (on: boolean) => (on ? <span>included</span> : <span className="faint">Premium</span>);
+  const copyUsername = async () => {
+    try { await navigator.clipboard.writeText(profile.username); toast('Username copied'); }
+    catch { toast(`Your username is ${profile.username}`); }
+  };
   return (
     <div className="grid">
+      {premium ? null : (
+        <Section span="span-6" title="Premium" action={<Tag tone="accent">one-time</Tag>} className="plan-offer-section">
+          <div className="row" style={{ gap: 10, alignItems: 'baseline' }}>
+            <div className="serif" style={{ fontSize: 22 }}>{PREMIUM_PRICE}</div>
+            <span className="small muted">no subscription</span>
+          </div>
+          <ul className="plan-unlocks small" style={{ marginTop: 12 }}>
+            {PREMIUM_UNLOCKS.map((u) => <li key={u}>{u}</li>)}
+          </ul>
+          <div className="caption" style={{ marginTop: 16 }}>How to pay</div>
+          <ol className="plan-steps small muted">
+            <li>Pay {PREMIUM_PRICE} by TWINT or PayPal to whoever runs this Sumry instance. Put your username in the payment note.</li>
+            <li>They unlock Premium on your account once it has arrived. Nothing is charged again.</li>
+          </ol>
+          <div className="row" style={{ gap: 10, marginTop: 14, alignItems: 'center' }}>
+            <button className="btn sm" onClick={copyUsername}>Copy my username</button>
+            <span className="tiny faint num">{profile.username}</span>
+          </div>
+        </Section>
+      )}
       <Section span="span-6" title="Your plan">
         <div className="row" style={{ gap: 10, alignItems: 'baseline' }}>
           <div className="serif" style={{ fontSize: 22 }}>{premium ? 'Premium' : 'Free'}</div>
@@ -499,21 +524,6 @@ function PlanSettings() {
           <li><span className="muted">Entries, budgets, plans, goals, insights</span><span>included</span></li>
         </ul>
       </Section>
-      {premium ? null : (
-        <Section span="span-6" title="Premium">
-          <div className="plan-offer">
-            <ul className="plan-prices">
-              {PREMIUM_PRICES.map((p) => (
-                <li key={p.label}>
-                  <span className="muted">{p.label}</span> <span className="serif">{p.price}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="small muted" style={{ marginTop: 6 }}>Unlimited accounts, statement import (PDF, camt.053, CSV) and the monthly statement by email.</p>
-          </div>
-          <p className="small muted" style={{ marginTop: 12 }}>Payment is by TWINT or PayPal for now, not in the app. No subscription. Contact whoever runs this Sumry instance; they switch your account over once it's paid.</p>
-        </Section>
-      )}
     </div>
   );
 }
