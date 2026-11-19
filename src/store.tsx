@@ -39,7 +39,8 @@ export type ThemeMode = 'system' | 'light' | 'dark';
 export type Density = 'comfortable' | 'compact';
 
 type Ctx = {
-  status: 'loading' | 'signed-out' | 'signed-in';
+  /** offline: a stored session could not be checked because the API was unreachable. */
+  status: 'loading' | 'signed-out' | 'signed-in' | 'offline';
   user: Me | null;
   /** Plan, limits and aiEnabled; null until loaded or on a backend without /users/me. */
   profile: Profile | null;
@@ -256,8 +257,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setUser(me);
         setStatus('signed-in');
         await load(storedToken!, ['core', 'rules', 'prefs']);
-      } catch {
-        if (!cancelled) clear();
+      } catch (e) {
+        if (cancelled) return;
+        // Only a rejected session signs out. Without a connection (or with the server down)
+        // the token is kept, so opening the home-screen app offline does not log you out.
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) clear();
+        else setStatus('offline');
       }
     })();
     return () => {
