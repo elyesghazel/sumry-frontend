@@ -3,6 +3,7 @@ import type { RegistrationMode } from '../../core';
 import { api } from '../api';
 import { useStore } from '../store';
 import { ErrorLine } from '../ui';
+import { LegalLinks, useLegal } from '../legal';
 
 /** An invite link is `/?invite=CODE`; the code is read once and dropped from the address bar. */
 function inviteFromUrl(): string {
@@ -28,7 +29,9 @@ export function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [invite, setInvite] = useState(initialInvite);
+  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const legal = useLegal();
   const [error, setError] = useState<string | null>(null);
 
   // An older backend without /api/config, or one that is unreachable, means no signup.
@@ -43,6 +46,8 @@ export function Login() {
   const canSignUp = mode === 'open' || mode === 'invite';
   const showSignup = signup && canSignUp;
   const needsInvite = mode === 'invite';
+  // Only instances that publish a privacy policy ask for consent to it.
+  const needsConsent = !!legal?.privacy;
 
   const switchTo = (next: boolean) => {
     setSignup(next);
@@ -65,7 +70,7 @@ export function Login() {
     }
   };
 
-  const signupReady = !!username.trim() && !!email && password.length >= 12 && (!needsInvite || !!invite.trim());
+  const signupReady = !!username.trim() && !!email && password.length >= 12 && (!needsInvite || !!invite.trim()) && (!needsConsent || consent);
   const ready = showSignup ? signupReady : !!email && !!password;
 
   return (
@@ -92,6 +97,15 @@ export function Login() {
           {showSignup && needsInvite ? (
             <input className="input lg mono" type="text" placeholder="Invite code" autoComplete="off" spellCheck={false} value={invite} onChange={(e) => setInvite(e.target.value)} required />
           ) : null}
+          {showSignup && needsConsent ? (
+            <label className="consent">
+              <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} required />
+              <span>
+                I have read the{' '}
+                <a className="link" href="/privacy" target="_blank" rel="noopener">privacy policy</a>
+              </span>
+            </label>
+          ) : null}
           <ErrorLine>{error}</ErrorLine>
           <button className="btn primary" type="submit" disabled={busy || !ready} style={{ padding: '11px 16px' }}>
             {showSignup ? (busy ? 'Creating account…' : 'Create account') : (busy ? 'Signing in…' : 'Sign in')}
@@ -112,6 +126,7 @@ export function Login() {
               : 'Your data stays on this instance. You can export or delete it from Settings at any time.'
             : 'Ten wrong passwords lock sign-in for fifteen minutes. Sessions can be ended from Settings on any device.'}
         </p>
+        <LegalLinks style={{ marginTop: 14 }} />
       </form>
     </div>
   );
