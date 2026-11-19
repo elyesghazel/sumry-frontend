@@ -13,3 +13,4 @@ export * from './iban';
 export * from './importing';
 export * from './plan';
 export * from './admin';
+export * from './markdown';
