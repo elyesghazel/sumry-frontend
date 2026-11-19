@@ -20,6 +20,7 @@ import {
   type Occurrence,
   type Planned,
   type Preferences,
+  type Profile,
   type Rule,
   type SafeToSpend,
   type Subscriptions,
@@ -40,6 +41,8 @@ export type Density = 'comfortable' | 'compact';
 type Ctx = {
   status: 'loading' | 'signed-out' | 'signed-in';
   user: Me | null;
+  /** Plan, limits and aiEnabled; null until loaded or on a backend without /users/me. */
+  profile: Profile | null;
   token: string | null;
 
   accounts: Account[];
@@ -77,7 +80,7 @@ type Ctx = {
   toast: (message: string) => void;
 };
 
-export type Domain = 'core' | 'budgets' | 'planned' | 'goals' | 'rules' | 'insights' | 'prefs';
+export type Domain = 'core' | 'budgets' | 'planned' | 'goals' | 'rules' | 'insights' | 'prefs' | 'profile';
 
 const Ctx = createContext<Ctx | null>(null);
 
@@ -93,6 +96,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Ctx['status']>('loading');
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<Me | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -167,6 +171,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     try { localStorage.removeItem(TOKEN_KEY); } catch { /* private mode */ }
     setToken(null);
     setUser(null);
+    setProfile(null);
     setAccounts([]); setCategories([]); setTransactions([]); setBudgets([]); setProgress([]);
     setPlanned([]); setUpcoming([]); setSafe(null); setGoals([]); setRules([]);
     setForecast(null); setSubscriptions(null); setPreferences(null);
@@ -200,6 +205,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (want('rules')) jobs.push(api.rules(t).then(setRules));
         if (want('insights') || want('core')) {
           jobs.push(api.forecast(t).then(setForecast), api.subscriptions(t).then(setSubscriptions));
+        }
+        if (want('profile') || want('prefs')) {
+          // Optional: an older backend has no /users/me, which must not fail the whole load.
+          jobs.push(api.profile(t).then(setProfile, (e: unknown) => {
+            if (e instanceof ApiError && e.status === 401) throw e;
+            setProfile(null);
+          }));
         }
         if (want('prefs')) {
           jobs.push(
@@ -294,7 +306,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Ctx>(
     () => ({
-      status, user, token,
+      status, user, profile, token,
       accounts, categories, transactions, budgets, progress, planned, upcoming, safe, goals, rules,
       forecast, subscriptions, preferences,
       loading, error,
@@ -303,7 +315,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       signIn, signOut, adoptToken, refresh, toast,
     }),
     [
-      status, user, token, accounts, categories, transactions, budgets, progress, planned, upcoming, safe,
+      status, user, profile, token, accounts, categories, transactions, budgets, progress, planned, upcoming, safe,
       goals, rules, forecast, subscriptions, preferences, loading, error, theme, setTheme, density,
       setDensity, privacy, setPrivacy, timeframe, setTimeframe, signIn, signOut, adoptToken, refresh, toast,
     ],
