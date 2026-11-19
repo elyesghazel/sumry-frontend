@@ -6,6 +6,8 @@ import {
   type Rule,
   type RuleApplyResult,
   type ShortcutToken,
+  PREMIUM_OFFER,
+  blockedBy,
   formatAmount,
   formatLongDate,
   formatShortDate,
@@ -16,8 +18,9 @@ import { categoryColor, href, navigate, useStore, type Route } from '../store';
 import { Empty, ErrorLine, Field, Modal, Section, Segmented, Swatch, Switch, Tag } from '../ui';
 import { PageHead } from '../components/Nav';
 import { AccountEditor, CategoryEditor, CategorySelect } from '../components/Editor';
+import { PlanNotice } from '../components/PlanNotice';
 
-type Tab = 'accounts' | 'categories' | 'data' | 'shortcuts' | 'look' | 'security';
+type Tab = 'accounts' | 'categories' | 'data' | 'shortcuts' | 'look' | 'security' | 'plan';
 const TABS: { key: Tab; label: string }[] = [
   { key: 'accounts', label: 'Accounts' },
   { key: 'categories', label: 'Categories & rules' },
@@ -25,23 +28,28 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'shortcuts', label: 'Shortcuts' },
   { key: 'look', label: 'Look & privacy' },
   { key: 'security', label: 'Sign-in' },
+  { key: 'plan', label: 'Plan' },
 ];
 const LEGACY_TAB: Record<string, Tab> = { rules: 'categories', import: 'data', export: 'data', account: 'security', statement: 'data' };
 
 export function Settings({ route }: { route: Route }) {
+  const { profile } = useStore();
   const raw = route.params.get('tab') ?? 'accounts';
   if (raw === 'statement') { navigate('insights', { tab: 'statement' }); return null; }
-  const tab: Tab = (TABS.some((t) => t.key === raw) ? raw : LEGACY_TAB[raw] ?? 'accounts') as Tab;
+  // The plan tab exists only where plans are enforced; self-hosters never see it.
+  const tabs = profile?.limitsEnabled ? TABS : TABS.filter((t) => t.key !== 'plan');
+  const tab: Tab = (tabs.some((t) => t.key === raw) ? raw : LEGACY_TAB[raw] ?? 'accounts') as Tab;
   return (
     <>
       <PageHead title="Settings" sub="Set it up once." />
-      <div className="tabs-row"><Segmented options={TABS} value={tab} onChange={(t) => navigate('settings', { tab: t })} /></div>
+      <div className="tabs-row"><Segmented options={tabs} value={tab} onChange={(t) => navigate('settings', { tab: t })} /></div>
       {tab === 'accounts' ? <Accounts /> : null}
       {tab === 'categories' ? <CategoriesAndRules /> : null}
       {tab === 'data' ? <Data /> : null}
       {tab === 'shortcuts' ? <Shortcuts /> : null}
       {tab === 'look' ? <Look /> : null}
       {tab === 'security' ? <AccountSettings /> : null}
+      {tab === 'plan' ? <PlanSettings /> : null}
     </>
   );
 }
@@ -49,10 +57,12 @@ export function Settings({ route }: { route: Route }) {
 // ---------------------------------------------------------------- accounts
 
 function Accounts() {
-  const { accounts } = useStore();
+  const { accounts, profile } = useStore();
   const [editing, setEditing] = useState<Account | null | undefined>(undefined);
+  const full = blockedBy(profile, 'accounts', accounts.length);
+  const max = profile?.limitsEnabled ? profile.limits.maxAccounts : null;
   return (
-    <Section span="" title={`${accounts.length} accounts`} action={<button className="btn sm" onClick={() => setEditing(null)}>+ Account</button>}>
+    <Section span="" title={max != null ? `${accounts.length} of ${max} accounts` : `${accounts.length} accounts`} action={<button className="btn sm" onClick={() => setEditing(null)} disabled={full}>+ Account</button>}>
       <div className="list">
         {accounts.map((a) => (
           <div key={a.id} className="row-between wrap">
@@ -70,6 +80,7 @@ function Accounts() {
           </div>
         ))}
       </div>
+      {full ? <PlanNotice limit="accounts" /> : null}
       <p className="tiny faint" style={{ marginTop: 10 }}>Savings accounts stay out of safe to spend. Open an account for its balance line, cash flow and the bank check.</p>
       {editing !== undefined ? <AccountEditor editing={editing} onClose={() => setEditing(undefined)} /> : null}
     </Section>
@@ -280,11 +291,13 @@ function RuleEditor({ editing, onClose, categories, accounts, presetCategory }: 
 // -------------------------------------------------------------------- data
 
 function Data() {
+  const { profile } = useStore();
+  const blocked = blockedBy(profile, 'statement_import');
   return (
     <div className="grid">
       <Section span="span-6" title="Import a statement">
         <p className="small muted" style={{ marginBottom: 12 }}>PostFinance PDF statements, camt.053 XML from any Swiss bank, and CSV exports (PostFinance, Revolut, generic). You check every row before anything is booked.</p>
-        <a className="btn primary" href={href('import')}>Import statement</a>
+        {blocked ? <PlanNotice limit="statement_import" /> : <a className="btn primary" href={href('import')}>Import statement</a>}
       </Section>
       <Export />
     </div>
@@ -453,6 +466,43 @@ function AccountSettings() {
           <ErrorLine>{error}</ErrorLine>
         </div>
       </Section>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------------- plan
+
+function PlanSettings() {
+  const { profile, accounts, refresh } = useStore();
+  // An admin can switch the plan at any time; reload it when the tab opens.
+  useEffect(() => { refresh(['profile']); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!profile?.limitsEnabled) return null;
+  const premium = profile.plan === 'PREMIUM';
+  const { limits } = profile;
+  const yes = (on: boolean) => (on ? <span>included</span> : <span className="faint">Premium</span>);
+  return (
+    <div className="grid">
+      <Section span="span-6" title="Your plan">
+        <div className="row" style={{ gap: 10, alignItems: 'baseline' }}>
+          <div className="serif" style={{ fontSize: 22 }}>{premium ? 'Premium' : 'Free'}</div>
+          {premium ? <Tag tone="pos">everything unlocked</Tag> : null}
+        </div>
+        <ul className="plan-list small" style={{ marginTop: 14 }}>
+          <li><span className="muted">Accounts</span><span className="num">{limits.maxAccounts == null ? 'unlimited' : `${accounts.length} of ${limits.maxAccounts}`}</span></li>
+          <li><span className="muted">Statement import</span>{yes(limits.statementImport)}</li>
+          <li><span className="muted">Statement by email</span>{yes(limits.statementEmail)}</li>
+          <li><span className="muted">Entries, budgets, plans, goals, insights</span><span>included</span></li>
+        </ul>
+      </Section>
+      {premium ? null : (
+        <Section span="span-6" title="Premium">
+          <div className="plan-offer">
+            <div className="serif" style={{ fontSize: 18 }}>{PREMIUM_OFFER}</div>
+            <p className="small muted" style={{ marginTop: 6 }}>No subscription. Unlimited accounts, statement import (PDF, camt.053, CSV) and the monthly statement by email.</p>
+          </div>
+          <p className="small muted" style={{ marginTop: 12 }}>Payment is not built into the app yet. To unlock Premium, contact whoever runs this Sumry instance; they can switch your account over.</p>
+        </Section>
+      )}
     </div>
   );
 }
