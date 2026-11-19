@@ -48,6 +48,9 @@ third-party code: the page talks only to your own server.
 - **Settings.** Accounts and reconciling, categories and rules (with a test box and a dry run
   over history), import and CSV/JSON export, an Apple Pay shortcut, theme, density, blurred
   amounts, sessions, and deleting the account.
+- **Admin** (`/admin`, role ADMIN only). Users with counts of accounts and entries, never
+  amounts or notes, premium on or off, lock, password reset links, delete, invites and an
+  audit log of every admin action. There is no way to log in as another user.
 - **Keyboard.** <kbd>g</kbd> then <kbd>t</kbd> / <kbd>a</kbd> / <kbd>p</kbd> /
   <kbd>i</kbd> / <kbd>s</kbd> jumps between pages.
 - Dark and light, JetBrains Mono throughout, self-hosted fonts.
