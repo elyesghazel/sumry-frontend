@@ -25,6 +25,7 @@ import type {
   Planned,
   Preferences,
   Profile,
+  PublicConfig,
   QuickEntry,
   Rule,
   RuleApplyResult,
@@ -145,8 +146,11 @@ export function createApi(config: ApiConfig) {
     // ---- session
     login: (email: string, password: string) =>
       request<Session>('/api/users/login', { body: { email, password } }),
-    register: (username: string, email: string, password: string) =>
-      request<Me>('/api/users/register', { body: { username, email, password } }),
+    /** Public, no token: tells a client whether to offer signup and whether it needs an invite. */
+    config: () => request<PublicConfig>('/api/config'),
+    /** `inviteCode` is required when the instance is invite-only and ignored otherwise. */
+    register: (username: string, email: string, password: string, inviteCode?: string | null) =>
+      request<Me>('/api/users/register', { body: { username, email, password, inviteCode: inviteCode || null } }),
     me: (token: string) => request<Me>('/api/users/validate', { token }),
     /** Profile plus plan, limits and aiEnabled. Older backends answer 404. */
     profile: (token: string) => request<Profile>('/api/users/me', { token }),
@@ -158,6 +162,9 @@ export function createApi(config: ApiConfig) {
     /** A year-long token for Apple Shortcuts that only reaches /api/shortcut. */
     shortcutToken: (token: string) =>
       request<ShortcutToken>('/api/users/shortcut-token', { token, method: 'POST', body: {} }),
+    /** Deletes the user and all their data. The password is asked again so a leaked token is not enough. */
+    deleteMe: (token: string, password: string) =>
+      request<void>('/api/users/me', { token, body: { password }, method: 'DELETE' }),
     preferences: (token: string) => request<Preferences>('/api/users/preferences', { token }),
     updatePreferences: (token: string, patch: Partial<Preferences>) =>
       request<Preferences>('/api/users/preferences', { token, body: patch, method: 'PUT' }),
