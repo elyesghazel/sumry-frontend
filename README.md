@@ -122,6 +122,10 @@ Each file that exists gets a page (`/privacy`, `/imprint`) and a link on the sig
 and in Settings; with `privacy.md` present, signup also asks to confirm it was read.
 Without the files nothing changes. The backend's `deploy/legal/` has example templates.
 
+An optional `premium.md` in the same folder holds your payment details (TWINT number, PayPal
+link, contact). On instances with plan limits it is shown under "How to pay" on the Plan tab
+in place of the generic text.
+
 ## Hosted
 
 Elyes Ghazel also runs a hosted Sumry. Free covers 2 accounts, without statement import or
