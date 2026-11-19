@@ -1,5 +1,8 @@
 import type {
   Account,
+  AdminStats,
+  AdminUser,
+  AuditPage,
   Budget,
   BudgetPeriod,
   BudgetProgress,
@@ -19,8 +22,13 @@ import type {
   ImportCommitInput,
   ImportPreview,
   ImportPreviewInput,
+  Invite,
+  InviteInput,
   MatchType,
   Me,
+  PasswordResetToken,
+  Plan,
+  PlanSetResult,
   Occurrence,
   Planned,
   Preferences,
@@ -165,9 +173,40 @@ export function createApi(config: ApiConfig) {
     /** Deletes the user and all their data. The password is asked again so a leaked token is not enough. */
     deleteMe: (token: string, password: string) =>
       request<void>('/api/users/me', { token, body: { password }, method: 'DELETE' }),
+    /** Public, no token: redeems a reset token from an admin. Signs the user out everywhere. */
+    resetPassword: (token: string, newPassword: string) =>
+      request<void>('/api/users/password-reset', { body: { token, newPassword } }),
     preferences: (token: string) => request<Preferences>('/api/users/preferences', { token }),
     updatePreferences: (token: string, patch: Partial<Preferences>) =>
       request<Preferences>('/api/users/preferences', { token, body: patch, method: 'PUT' }),
+
+    // ---- admin (role ADMIN; the server answers 403 to anyone else)
+    adminUsers: (token: string) => request<AdminUser[]>('/api/admin/users', { token }),
+    adminStats: (token: string) => request<AdminStats>('/api/admin/stats', { token }),
+    /** Newest first; `page` from 0, `size` up to 200. */
+    adminAudit: (token: string, page = 0, size = 50) =>
+      request<AuditPage>(`/api/admin/audit${qs({ page, size })}`, { token }),
+    adminSetPlan: (token: string, userId: string, plan: Plan) =>
+      request<PlanSetResult>(`/api/admin/users/${userId}/plan`, { token, body: { plan } }),
+    /** Ends every session of the user at once. */
+    adminLock: (token: string, userId: string) =>
+      request<AdminUser>(`/api/admin/users/${userId}/lock`, { token, method: 'POST', body: {} }),
+    adminUnlock: (token: string, userId: string) =>
+      request<AdminUser>(`/api/admin/users/${userId}/unlock`, { token, method: 'POST', body: {} }),
+    adminDeleteUser: (token: string, userId: string) =>
+      request<void>(`/api/admin/users/${userId}`, { token, method: 'DELETE' }),
+    /** A one-time token, valid 24 h, that replaces any unused one. Readable only in this response. */
+    adminPasswordReset: (token: string, userId: string) =>
+      request<PasswordResetToken>(`/api/admin/users/${userId}/password-reset`, { token, method: 'POST', body: {} }),
+    invites: (token: string) => request<Invite[]>('/api/admin/invites', { token }),
+    /** The response carries the full code; it is the only time it can be read. */
+    createInvite: (token: string, input: InviteInput = {}) =>
+      request<Invite>('/api/admin/invites', {
+        token,
+        body: { expiresInDays: input.expiresInDays ?? null, note: input.note || null },
+      }),
+    revokeInvite: (token: string, id: string) =>
+      request<Invite>(`/api/admin/invites/${id}`, { token, method: 'DELETE' }),
 
     // ---- accounts
     accounts: (token: string) => request<Account[]>('/api/users/accounts/', { token }),
