@@ -356,6 +356,9 @@ export type Page = 'today' | 'activity' | 'import' | 'plan' | 'insights' | 'sett
 
 const PAGES: Page[] = ['today', 'activity', 'import', 'plan', 'insights', 'settings', 'account'];
 
+/** The public password reset page lives at `/reset?token=...`, outside the signed-in shell. */
+export const isResetPath = (): boolean => window.location.pathname.replace(/\/+$/, '') === '/reset';
+
 /** Pages of the old layout, so bookmarks and the PWA start URL keep working. */
 const LEGACY: Record<string, [Page, Record<string, string>?]> = {
   home: ['today'],

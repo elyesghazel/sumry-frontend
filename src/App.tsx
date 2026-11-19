@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { StoreProvider, useRoute, useStore } from './store';
+import { isResetPath, StoreProvider, useRoute, useStore } from './store';
 import { Login } from './pages/Login';
 import { Today } from './pages/Today';
 import { Activity } from './pages/Activity';
@@ -8,6 +8,7 @@ import { Plan } from './pages/Plan';
 import { Insights } from './pages/Insights';
 import { Settings } from './pages/Settings';
 import { AccountDetail } from './pages/AccountDetail';
+import { ResetPassword } from './pages/Reset';
 import { BottomTabs, MobileTop, NAV, Palette, ShellContext, Sidebar, useGoKeys, type ShellApi } from './components/Nav';
 import { TransactionEditor } from './components/Editor';
 
@@ -78,6 +79,14 @@ function Shell() {
 }
 
 export default function App() {
+  // The reset page is public and works the same signed in or out.
+  if (isResetPath()) {
+    return (
+      <StoreProvider>
+        <ResetPassword />
+      </StoreProvider>
+    );
+  }
   return (
     <StoreProvider>
       <Shell />
