@@ -11,3 +11,4 @@ export * from './today';
 export * from './pots';
 export * from './iban';
 export * from './importing';
+export * from './plan';

@@ -24,6 +24,7 @@ import type {
   Occurrence,
   Planned,
   Preferences,
+  Profile,
   QuickEntry,
   Rule,
   RuleApplyResult,
@@ -62,10 +63,13 @@ export type ApiConfig = {
 
 export class ApiError extends Error {
   readonly status: number;
+  /** The parsed error body, e.g. `{ error: 'plan_limit', limit: 'accounts' }`. */
+  readonly body: unknown;
 
-  constructor(status: number, message: string) {
+  constructor(status: number, message: string, body?: unknown) {
     super(message);
     this.status = status;
+    this.body = body ?? null;
   }
 }
 
@@ -73,6 +77,7 @@ export class ApiError extends Error {
 export function messageFrom(status: number, body: unknown): string {
   if (body && typeof body === 'object') {
     const b = body as Record<string, unknown>;
+    if (b.error === 'plan_limit') return 'Not included in the free plan.';
     if (typeof b.message === 'string') return b.message;
     if (Array.isArray(b.validationErrors)) {
       const first = b.validationErrors[0] as { message?: string } | undefined;
@@ -127,7 +132,8 @@ export function createApi(config: ApiConfig) {
     const text = await res.text();
     if (!res.ok) {
       if (res.status === 401) config.onUnauthorized?.(path);
-      throw new ApiError(res.status, messageFrom(res.status, text ? safeJson(text) : null));
+      const errBody = text ? safeJson(text) : null;
+      throw new ApiError(res.status, messageFrom(res.status, errBody), errBody);
     }
     if (opts.raw) return text as unknown as T;
     return (text ? safeJson(text) : null) as T;
@@ -142,6 +148,8 @@ export function createApi(config: ApiConfig) {
     register: (username: string, email: string, password: string) =>
       request<Me>('/api/users/register', { body: { username, email, password } }),
     me: (token: string) => request<Me>('/api/users/validate', { token }),
+    /** Profile plus plan, limits and aiEnabled. Older backends answer 404. */
+    profile: (token: string) => request<Profile>('/api/users/me', { token }),
     logout: (token: string) => request<void>('/api/users/logout', { token, method: 'POST', body: {} }),
     logoutEverywhere: (token: string) => request<void>('/api/users/logout-all', { token, method: 'POST', body: {} }),
     /** Returns a fresh token: every other session is invalidated by the change. */
