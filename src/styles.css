@@ -716,3 +716,5 @@ a:focus-visible, button:focus-visible, .input:focus-visible { outline: 2px solid
 .plan-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .plan-list li { display: flex; justify-content: space-between; gap: 12px; }
 .plan-offer { border: 1px solid var(--rule-strong); border-radius: var(--r); padding: 14px; }
+.plan-prices { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.plan-prices li { display: flex; justify-content: space-between; gap: 12px; }

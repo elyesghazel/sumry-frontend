@@ -6,7 +6,12 @@ import type { PlanLimitName, Profile } from './types';
  * enforces plans (`limitsEnabled`), so self-hosted instances never see any of it.
  */
 
-export const PREMIUM_OFFER = 'Premium - 20 CHF once';
+/** Prices on the hosted instance; shown only when the backend enforces plans. */
+export const PREMIUM_PRICES = [
+  { label: 'Monthly', price: '2 CHF / month' },
+  { label: 'Yearly', price: '18 CHF / year' },
+  { label: 'Founder lifetime', price: '29 CHF once, first 50 users' },
+] as const;
 
 /** The limit a failed call ran into, or null when it was not a plan_limit 403. */
 export function planLimitOf(e: unknown): PlanLimitName | null {
