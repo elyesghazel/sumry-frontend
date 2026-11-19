@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Vendors core/ into the phone app at src/core/, each file stamped with a header that
 # names the source and the sha256 of the body. The app's `npm run check-core` verifies it.
-#   scripts/sync-core.sh [path/to/sumry-app]   (default: $SUMRY_APP or ~/src/sumry-app)
+#   scripts/sync-core.sh [path/to/sumry-app]   (default: $SUMRY_APP or a sumry-app checkout next to this one)
 set -euo pipefail
 
-src="$(cd "$(dirname "$0")/.." && pwd)/core"
-app="${1:-${SUMRY_APP:-$HOME/src/sumry-app}}"
+root="$(cd "$(dirname "$0")/.." && pwd)"
+src="$root/core"
+app="${1:-${SUMRY_APP:-$root/../sumry-app}}"
 dest="$app/src/core"
 
 [ -d "$src" ] || { echo "no core/ at $src" >&2; exit 1; }
