@@ -113,7 +113,8 @@ origin, build with `VITE_API_URL` and list this origin in the backend's
 
 ## Hosted
 
-Elyes Ghazel also runs a hosted Sumry. Free covers 2 accounts without statement import;
+Elyes Ghazel also runs a hosted Sumry. Free covers 2 accounts, without statement import or
+the statement email;
 Premium (2 CHF a month or 18 CHF a year) and Founder Lifetime (29 CHF, first 50 users)
 unlock everything. Payment is manual via TWINT for now. Self-hosted, every feature is free.
 Details are in the [backend README](https://github.com/elyesghazel/sumry-backend#hosted).
