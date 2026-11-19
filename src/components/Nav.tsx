@@ -14,6 +14,7 @@ import {
 import { api } from '../api';
 import { href, navigate, useStore, type Page } from '../store';
 import { Tag } from '../ui';
+import { UpgradeEntry } from './Upgrade';
 
 /** The five places. Account detail and Import live under them. */
 export const NAV: { key: Page; label: string; key2: string; icon: string }[] = [
@@ -65,6 +66,7 @@ export function Sidebar({ page, accountId }: { page: Page; accountId?: string | 
         ))}
       </nav>
       <span className="grow" />
+      <UpgradeEntry />
       <div className="side-sep" />
       <nav className="side-nav">
         <a href={href('settings')} aria-current={page === 'settings' ? 'page' : undefined}>

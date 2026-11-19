@@ -26,6 +26,7 @@ import { DeltaPercent, Empty, Meter, Num, Swatch, Tag } from '../ui';
 import { PageHead, useShell } from '../components/Nav';
 import { TxList } from '../components/TxList';
 import { TransactionEditor } from '../components/Editor';
+import { UpgradeBanner } from '../components/Upgrade';
 
 /** Can I spend? Does anything need me? What's coming? In that order. */
 export function Today() {
@@ -78,6 +79,7 @@ export function Today() {
   return (
     <>
       <PageHead title={greeting()} sub={now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })} />
+      <UpgradeBanner />
 
       <div className="today">
         <div className="today-main">

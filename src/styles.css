@@ -715,9 +715,22 @@ a:focus-visible, button:focus-visible, .input:focus-visible { outline: 2px solid
 .plan-note::before { content: '// plan'; color: var(--ink-3); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; }
 .plan-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .plan-list li { display: flex; justify-content: space-between; gap: 12px; }
-.plan-offer { border: 1px solid var(--rule-strong); border-radius: var(--r); padding: 14px; }
-.plan-prices { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.plan-prices li { display: flex; justify-content: space-between; gap: 12px; }
+.plan-offer-section { border-top-color: var(--accent); }
+.plan-unlocks { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.plan-unlocks li::before { content: '+ '; color: var(--accent); }
+.plan-steps { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.upgrade-entry {
+  display: flex; flex-direction: column; gap: 2px;
+  margin: 12px 2px 0; padding: 9px 10px; border-radius: var(--r);
+  border: 1px solid var(--rule); border-left: 2px solid var(--accent); color: var(--ink);
+}
+.upgrade-entry:hover { background: var(--paper-2); }
+.upgrade-title { font-weight: 600; }
+.upgrade-banner {
+  align-items: center; gap: 10px; margin: 0 0 14px; padding: 10px 12px; border-radius: var(--r);
+  border: 1px solid var(--rule); border-left: 2px solid var(--accent); color: var(--ink); font-size: 13.5px;
+}
+.upgrade-go { color: var(--accent); }
 
 /* ---------------------------------------------------------------- admin */
 
