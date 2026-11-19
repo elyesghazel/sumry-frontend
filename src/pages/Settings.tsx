@@ -20,6 +20,7 @@ import { Empty, ErrorLine, Field, Modal, Section, Segmented, Swatch, Switch, Tag
 import { PageHead } from '../components/Nav';
 import { AccountEditor, CategoryEditor, CategorySelect } from '../components/Editor';
 import { PlanNotice } from '../components/PlanNotice';
+import { LegalLinks } from '../legal';
 
 type Tab = 'accounts' | 'categories' | 'data' | 'shortcuts' | 'look' | 'security' | 'plan';
 const TABS: { key: Tab; label: string }[] = [
@@ -51,6 +52,7 @@ export function Settings({ route }: { route: Route }) {
       {tab === 'look' ? <Look /> : null}
       {tab === 'security' ? <AccountSettings /> : null}
       {tab === 'plan' ? <PlanSettings /> : null}
+      <LegalLinks />
     </>
   );
 }
