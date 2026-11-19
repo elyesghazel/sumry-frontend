@@ -1,0 +1,30 @@
+# Example: serve the dashboard behind Traefik on an existing `traefik_proxy` network.
+# Replace sumry.example.com and the entrypoint / certresolver names with your own.
+#   docker compose -f deploy/traefik.example.yml up -d --build
+#
+# The page calls `/api` on its own origin. Give the backend a router on the same host
+# with `PathPrefix(`/api`)`, which Traefik ranks above this plain Host rule:
+#   traefik.http.routers.sumry-api.rule=Host(`sumry.example.com`) && PathPrefix(`/api`)
+name: sumry-web
+
+services:
+  web:
+    build:
+      context: ..
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sumry-web.rule=Host(`sumry.example.com`)"
+      - "traefik.http.routers.sumry-web.entrypoints=https"
+      - "traefik.http.routers.sumry-web.tls=true"
+      - "traefik.http.routers.sumry-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.sumry-web.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_proxy"
+
+networks:
+  traefik_proxy:
+    external: true
