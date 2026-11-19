@@ -21,7 +21,7 @@ import { Empty, ErrorLine, Field, Modal, Section, Segmented, Swatch, Switch, Tag
 import { PageHead } from '../components/Nav';
 import { AccountEditor, CategoryEditor, CategorySelect } from '../components/Editor';
 import { PlanNotice } from '../components/PlanNotice';
-import { LegalLinks } from '../legal';
+import { LegalLinks, Markdown, usePremiumDetails } from '../legal';
 
 type Tab = 'accounts' | 'categories' | 'data' | 'shortcuts' | 'look' | 'security' | 'plan';
 const TABS: { key: Tab; label: string }[] = [
@@ -478,6 +478,19 @@ function AccountSettings() {
 
 // -------------------------------------------------------------------- plan
 
+/** The instance's own `premium.md` when it has one, the generic steps otherwise. */
+function HowToPay() {
+  const details = usePremiumDetails();
+  if (details === undefined) return null;
+  if (details) return <div className="plan-pay small"><Markdown source={details} /></div>;
+  return (
+    <ol className="plan-steps small muted">
+      <li>Pay {PREMIUM_PRICE} by TWINT or PayPal to whoever runs this Sumry instance. Put your username in the payment note.</li>
+      <li>They unlock Premium on your account once it has arrived. Nothing is charged again.</li>
+    </ol>
+  );
+}
+
 function PlanSettings() {
   const { profile, accounts, refresh, toast } = useStore();
   // An admin can switch the plan at any time; reload it when the tab opens.
@@ -502,10 +515,7 @@ function PlanSettings() {
             {PREMIUM_UNLOCKS.map((u) => <li key={u}>{u}</li>)}
           </ul>
           <div className="caption" style={{ marginTop: 16 }}>How to pay</div>
-          <ol className="plan-steps small muted">
-            <li>Pay {PREMIUM_PRICE} by TWINT or PayPal to whoever runs this Sumry instance. Put your username in the payment note.</li>
-            <li>They unlock Premium on your account once it has arrived. Nothing is charged again.</li>
-          </ol>
+          <HowToPay />
           <div className="row" style={{ gap: 10, marginTop: 14, alignItems: 'center' }}>
             <button className="btn sm" onClick={copyUsername}>Copy my username</button>
             <span className="tiny faint num">{profile.username}</span>

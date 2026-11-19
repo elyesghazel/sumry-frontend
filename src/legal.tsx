@@ -1,20 +1,23 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
-import { LEGAL_DOCS, inlineText, isLegalResponse, parseMarkdown, type Block, type Inline, type LegalDoc } from '../core';
+import { LEGAL_DOCS, PREMIUM_FILE, inlineText, isLegalResponse, parseMarkdown, type Block, type Inline, type LegalDoc } from '../core';
 
 /**
  * Legal texts are instance config: the operator mounts `/legal/privacy.md` and
  * `/legal/imprint.md` next to the app. Without them nothing legal is shown anywhere.
  */
-const cache = new Map<LegalDoc, Promise<string | null>>();
+const cache = new Map<string, Promise<string | null>>();
 
-export function fetchLegal(doc: LegalDoc): Promise<string | null> {
-  let p = cache.get(doc);
+export const fetchLegal = (doc: LegalDoc) => fetchInstanceFile(LEGAL_DOCS[doc].file);
+
+/** An operator-mounted markdown file, or null when the instance does not serve it. */
+export function fetchInstanceFile(file: string): Promise<string | null> {
+  let p = cache.get(file);
   if (!p) {
-    p = fetch(LEGAL_DOCS[doc].file, { cache: 'no-cache' })
+    p = fetch(file, { cache: 'no-cache' })
       .then(async (r) => (isLegalResponse(r.status, r.headers.get('content-type')) ? await r.text() : null))
       .then((text) => (text && text.trim() ? text : null))
       .catch(() => null);
-    cache.set(doc, p);
+    cache.set(file, p);
   }
   return p;
 }
@@ -30,6 +33,17 @@ export function useLegal(): Record<LegalDoc, boolean> | undefined {
     return () => { cancelled = true; };
   }, []);
   return found;
+}
+
+/** The instance's payment details for Premium; undefined while loading, null without the file. */
+export function usePremiumDetails(): string | null | undefined {
+  const [text, setText] = useState<string | null>();
+  useEffect(() => {
+    let cancelled = false;
+    fetchInstanceFile(PREMIUM_FILE).then((t) => { if (!cancelled) setText(t); });
+    return () => { cancelled = true; };
+  }, []);
+  return text;
 }
 
 /** Footer links to the legal pages that exist. Renders nothing on instances without them. */

@@ -719,6 +719,10 @@ a:focus-visible, button:focus-visible, .input:focus-visible { outline: 2px solid
 .plan-unlocks { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
 .plan-unlocks li::before { content: '+ '; color: var(--accent); }
 .plan-steps { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.plan-pay { margin-top: 6px; }
+.plan-pay .prose { line-height: 1.5; }
+.plan-pay .prose > * + * { margin-top: 8px; }
+.plan-pay .prose h1, .plan-pay .prose h2, .plan-pay .prose h3 { font-size: 14px; font-weight: 650; margin: 12px 0 0; letter-spacing: 0; }
 .upgrade-entry {
   display: flex; flex-direction: column; gap: 2px;
   margin: 12px 2px 0; padding: 9px 10px; border-radius: var(--r);
