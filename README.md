@@ -14,7 +14,7 @@
   <img alt="pwa" src="https://img.shields.io/badge/PWA-installable-333333?style=flat-square">
 </p>
 
-<p><a href="#features"><b>Features</b></a> · <a href="#install-on-iphone-pwa"><b>iPhone</b></a> · <a href="#self-host"><b>Self-host</b></a> · <a href="#configuration"><b>Configuration</b></a> · <a href="#development"><b>Development</b></a></p>
+<p><a href="#features"><b>Features</b></a> · <a href="#install-on-iphone-pwa"><b>iPhone</b></a> · <a href="#self-host"><b>Self-host</b></a> · <a href="#hosted"><b>Hosted</b></a> · <a href="#configuration"><b>Configuration</b></a> · <a href="#development"><b>Development</b></a></p>
 
 </div>
 
@@ -111,6 +111,13 @@ docker compose up -d --build    # serves on http://localhost:8080 (SUMRY_WEB_POR
 origin, build with `VITE_API_URL` and list this origin in the backend's
 `SUMRY_CORS_ALLOWED_ORIGINS`, otherwise the browser blocks every request.
 
+## Hosted
+
+Elyes Ghazel also runs a hosted Sumry. Free covers 2 accounts without statement import;
+Premium (2 CHF a month or 18 CHF a year) and Founder Lifetime (29 CHF, first 50 users)
+unlock everything. Payment is manual via TWINT for now. Self-hosted, every feature is free.
+Details are in the [backend README](https://github.com/elyesghazel/sumry-backend#hosted).
+
 ## Configuration
 
 | Variable | When | |
@@ -152,12 +159,17 @@ public/          manifest, icons and the service worker (the API is never cached
 contract. Reports add up in the base currency: each entry carries its value in the base
 currency at booking time. Pushes to `main` publish `ghcr.io/elyesghazel/sumry-frontend:latest`.
 
-Contributions follow the backend's [CONTRIBUTING.md](https://github.com/elyesghazel/sumry-backend/blob/main/CONTRIBUTING.md);
-security reports go through its [SECURITY.md](https://github.com/elyesghazel/sumry-backend/blob/main/SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for checks, commits and the CLA. Security reports go
+through the backend's [SECURITY.md](https://github.com/elyesghazel/sumry-backend/blob/main/SECURITY.md).
 
 ## License
 
-AGPL-3.0. If you run a modified Sumry as a service for others, you share your changes. See
-[LICENSE](LICENSE).
+[AGPL-3.0](LICENSE). You may self-host Sumry, change it and use it commercially. If you
+modify it and offer it to others as a service over a network, you have to publish the source
+of your modified version under the same license.
+
+The name "Sumry" and the logo are not part of the license: forks and public hosts use their
+own name. See [TRADEMARK.md](TRADEMARK.md). Contributions are accepted under the
+[CLA in CONTRIBUTING.md](CONTRIBUTING.md#contributor-license-agreement).
 
 <div align="right"><a href="#readme-top">back to top ↑</a></div>
