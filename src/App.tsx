@@ -12,6 +12,7 @@ import { Admin } from './pages/Admin';
 import { ResetPassword } from './pages/Reset';
 import { BottomTabs, MobileTop, NAV, Palette, ShellContext, Sidebar, useGoKeys, type ShellApi } from './components/Nav';
 import { TransactionEditor } from './components/Editor';
+import { LegalPage, legalDocForPath } from './legal';
 
 const TITLES: Record<string, string> = { import: 'Import', account: 'Account', settings: 'Settings', admin: 'Admin' };
 
@@ -100,6 +101,9 @@ function Offline() {
 }
 
 export default function App() {
+  // Privacy policy and imprint are public pages backed by files the operator mounts.
+  const legal = legalDocForPath();
+  if (legal) return <LegalPage doc={legal} />;
   // The reset page is public and works the same signed in or out.
   if (isResetPath()) {
     return (
