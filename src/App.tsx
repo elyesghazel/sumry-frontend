@@ -50,6 +50,7 @@ function Shell() {
       </div>
     );
   }
+  if (status === 'offline') return <Offline />;
   if (status === 'signed-out') return <Login />;
 
   return (
@@ -74,6 +75,24 @@ function Shell() {
       {palette ? <Palette initialText={palette.text} onClose={() => setPalette(null)} onNewEntry={() => setEntry({})} /> : null}
       {entry ? <TransactionEditor editing={null} presetAccountId={entry.preset} onClose={() => setEntry(null)} /> : null}
     </ShellContext.Provider>
+  );
+}
+
+function Offline() {
+  // Back online: start over, the stored session is checked again.
+  useEffect(() => {
+    const retry = () => window.location.reload();
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, []);
+  return (
+    <div className="login-wrap">
+      <div className="login">
+        <p>Can't reach Sumry right now.</p>
+        <p className="small" style={{ color: 'var(--ink-3)', margin: '8px 0 16px' }}>You are offline or the server is down. Your session is kept; this page retries when the connection is back.</p>
+        <button className="btn" onClick={() => window.location.reload()}>Try again</button>
+      </div>
+    </div>
   );
 }
 
