@@ -1,82 +1,163 @@
-# Sumry — web dashboard
+<a id="readme-top"></a>
 
-The landscape counterpart to the [mobile app](https://git.elyesghazel.ch/sumry/app):
-a desktop dashboard over the same [API](https://git.elyesghazel.ch/sumry/backend).
-Live at <https://sumry.elyesghazel.ch>.
+<div align="center">
 
-Logging transactions is the phone's job. This is for looking: balances over time,
-where the money goes, how this period compares to the last one.
+<h1>sumry.</h1>
 
-## Design
+<p><b>A calm personal finance tracker you can host yourself.</b><br>This is the web app: React and Vite, installable on a phone as a PWA.<br>It runs on the <a href="https://github.com/elyesghazel/sumry-backend">sumry-backend</a> API; Android has <a href="https://github.com/elyesghazel/sumry-app">sumry-app</a>.</p>
 
-The ledger: paper, ink and hairlines. Figures are set in Fraunces with optical sizing,
-everything else in Inter with tabular numerals. The interface itself is near-monochrome —
-colour means the direction money moved, plus an eight-step earth-tone ramp that identifies
-chart series and is never cycled to invent a ninth. Light is the primary palette; dark is
-its own set, not an inversion, and follows the system unless overridden. Density has two
-steps (comfortable / compact) that change spacing only.
+<p>
+  <a href="https://github.com/elyesghazel/sumry-frontend/actions/workflows/ci.yml"><img alt="ci" src="https://img.shields.io/github/actions/workflow/status/elyesghazel/sumry-frontend/ci.yml?style=flat-square&label=ci&logo=githubactions&logoColor=white"></a>
+  <a href="LICENSE"><img alt="license" src="https://img.shields.io/badge/license-AGPL--3.0-lightgrey?style=flat-square"></a>
+  <img alt="react" src="https://img.shields.io/badge/React-19-149ECA?style=flat-square&logo=react&logoColor=white">
+  <img alt="vite" src="https://img.shields.io/badge/Vite-8-646CFF?style=flat-square&logo=vite&logoColor=white">
+  <img alt="pwa" src="https://img.shields.io/badge/PWA-installable-333333?style=flat-square">
+</p>
 
-Every chart carries a hover layer, because a plot you can't interrogate is a picture.
+<p><a href="#features"><b>Features</b></a> · <a href="#install-on-iphone-pwa"><b>iPhone</b></a> · <a href="#self-host"><b>Self-host</b></a> · <a href="#configuration"><b>Configuration</b></a> · <a href="#development"><b>Development</b></a></p>
 
-## What it does
+</div>
 
-- **Home** — safe to spend before the next planned income, month-end forecast, upcoming
-  items, budgets at a glance, balance and breakdown for the chosen period.
-- **Activity** — the full ledger, filtered and paged on the server with totals for the
-  whole match; every row opens the editor.
-- **Accounts** — balances (with foreign currencies converted), sparklines, transfers,
-  reconciliation ("Adjust" books the difference rather than overwriting).
-- **Budgets** — per-category envelopes with a period, a start day (payday) and rollover;
-  progress shows pace against elapsed time, not just the total.
-- **Plan** — planned transactions (rent, salary, savings transfers) with one-click or
-  automatic booking, savings goals, and subscriptions detected from history.
-- **Insights** — flow Sankey, pace vs previous period, weekday rhythm, daily heatmap,
-  per-category trends, year over year.
-- **Settings** — categorisation rules (with dry-run recategorisation of history),
-  statement import for PostFinance and Revolut CSVs with duplicate detection, CSV/JSON
-  export, the monthly statement, categories, password and sessions.
-- **Quick add** (⌘K) — `12.50 kebab cash yesterday`, `got 300 lohn`,
-  `500 from pf to sparkonto`, `netflix 17.90 #Abos`; parsed live, booked on Enter.
-- Installs as a PWA and accepts shared text into quick add.
+---
 
-## Running it
+![The Today screen with safe to spend, the next 14 days, budgets and net worth](docs/today.png)
 
-```bash
-npm install
-npm run dev            # proxies /api to http://localhost:48090 (SUMRY_API_PROXY overrides)
-```
+Sumry shows how much you can spend today without touching what is already planned, where
+the month is heading and what is due next. You log entries in a line of text
+(`12.50 lunch cash`), import bank statements, and plan the rest. No bank login and no
+third-party code: the page talks only to your own server.
 
-## Deploying
+## Features
 
-The page calls the API same-origin at `/api`, so whatever sits in front of it routes
-`/api` to the backend and everything else to this container. `VITE_API_URL` overrides
-that with an absolute origin; it is baked in at image build time, so changing it means
-rebuilding.
+- **Today.** Safe to spend until the next planned income, the next 14 days as a bar per day,
+  budgets, the month-end forecast, net worth, and a "needs you" list (accounts to check
+  against the bank, plans to book).
+- **Activity.** Every entry, searched and filtered on the server (period, account, category,
+  amount, spending or income) with totals for the whole match. Each row opens the editor,
+  and selected rows can be moved to another category at once.
+- **Plan.** Planned income, bills and transfers as a list or a calendar, with Book, Skip and
+  Postpone. Budgets with a start day and rollover, and savings goals with what is needed per
+  month.
+- **Insights.** Spending over time, balance, the month-end forecast, what moved most against
+  the previous period, detected subscriptions, and the monthly statement.
+- **Import.** PostFinance PDF, camt.053 XML and CSV. You see every row before anything is
+  booked: rule matches, entries already logged, rows that still need a category.
+- **Quick add** with <kbd>⌘K</kbd> / <kbd>Ctrl K</kbd>: `12.50 kebab cash yesterday`,
+  `got 300 salary`, `500 from giro to savings`, parsed as you type and booked on Enter. It
+  also searches.
+- **Settings.** Accounts and reconciling, categories and rules (with a test box and a dry run
+  over history), import and CSV/JSON export, an Apple Pay shortcut, theme, density, blurred
+  amounts, sessions, and deleting the account.
+- **Keyboard.** <kbd>g</kbd> then <kbd>t</kbd> / <kbd>a</kbd> / <kbd>p</kbd> /
+  <kbd>i</kbd> / <kbd>s</kbd> jumps between pages.
+- Dark and light, JetBrains Mono throughout, self-hosted fonts.
+
+| Activity | Plan |
+| --- | --- |
+| ![Activity with filters and totals](docs/activity.png) | ![Plan with planned items, budgets and goals](docs/plan.png) |
+| **Insights** | **Import** |
+| ![Insights with spending over time and the month-end forecast](docs/insights.png) | ![Statement import preview with rule matches and an entry already logged](docs/import.png) |
+| **Settings** | |
+| ![Categories and rules](docs/settings.png) | |
+
+The screenshots show invented demo data from
+[`deploy/demo-seed.sh`](https://github.com/elyesghazel/sumry-backend/blob/main/deploy/demo-seed.sh)
+in the backend repo.
+
+## Using it
+
+1. Sign in. If the instance allows signups, the sign-in screen offers **Create an account**;
+   with invites on it asks for a code. An invite link (`/?invite=CODE`) fills it in.
+2. Add your accounts in **Settings > Accounts** with their current balance.
+3. Log entries with quick add, or import a statement from **Activity > Import statement**.
+   Add rules for what keeps coming back, so imports and quick add pick the category.
+4. Put rent, salary, insurance and savings transfers in **Plan**. Safe to spend on Today
+   counts them from then on.
+5. Now and then, **Check** an account on Today against the real balance; the difference is
+   booked as an adjustment.
+
+## Install on iPhone (PWA)
+
+<p align="center"><img src="docs/mobile-today.png" width="280" alt="Today on an iPhone"></p>
+
+1. Open your Sumry address in **Safari** (other browsers on iOS cannot install web apps).
+2. Tap **Share**, then **Add to Home Screen**, then **Add**.
+3. Open Sumry from the home screen and sign in. It runs full screen, without the browser bar,
+   with its own tab bar at the bottom.
+
+What works offline: the app itself is cached, so it opens instantly. Balances and entries
+are never cached, because a stale balance is worse than none, so without a connection it
+shows that the server cannot be reached, keeps you signed in, and reloads once the
+connection is back. Entries cannot be logged offline.
+
+Android: install the APK from the
+[sumry-app releases](https://github.com/elyesghazel/sumry-app/releases), or add this web app
+to the home screen from Chrome the same way.
+
+## Self-host
+
+The [sumry-backend self-host guide](https://github.com/elyesghazel/sumry-backend/tree/main/deploy)
+runs everything in one compose stack: Postgres, Redis, the API, this web app (the prebuilt
+`ghcr.io/elyesghazel/sumry-frontend` image) and Caddy with automatic HTTPS. Start there.
+
+To serve this container behind your own proxy instead, route `/api` to the backend and
+everything else here:
 
 ```bash
 docker compose up -d --build    # serves on http://localhost:8080 (SUMRY_WEB_PORT)
 ```
 
-Prebuilt images are published to `ghcr.io/elyesghazel/sumry-frontend`. A Traefik setup
-is in `deploy/traefik.example.yml`. If the API is on another origin, it must list this
-one in `SUMRY_CORS_ALLOWED_ORIGINS`, otherwise the browser blocks every request.
+`deploy/traefik.example.yml` shows the same with Traefik. If the API lives on another
+origin, build with `VITE_API_URL` and list this origin in the backend's
+`SUMRY_CORS_ALLOWED_ORIGINS`, otherwise the browser blocks every request.
 
-## Layout
+## Configuration
+
+| Variable | When | |
+|---|---|---|
+| `VITE_API_URL` | build time | Absolute API origin. Empty (default) means same-origin `/api`. Vite inlines it, so changing it means rebuilding |
+| `SUMRY_WEB_PORT` | `docker compose` | Host port for the container (default `8080`) |
+| `SUMRY_API_PROXY` | `npm run dev` | Where the dev server sends `/api` (default `http://localhost:48090`) |
+
+Everything else (registration, plan limits, mail, the AI check) is configured on the
+backend; see its [configuration table](https://github.com/elyesghazel/sumry-backend#configuration).
+The web app reads what it needs from `/api/config` and `/api/users/me`, so features the
+server has off simply do not show.
+
+## Development
+
+Needs Node 22 and a backend on `localhost:48090` (in sumry-backend: `docker compose up -d --build`).
+
+```bash
+npm install
+npm run dev       # http://localhost:5173, /api proxied to the backend
+npm test          # vitest, core/ logic
+npm run lint      # oxlint
+npm run build     # type check and production build into dist/
+```
 
 ```
+core/            pure logic shared with the phone app: API client, types, analytics,
+                 plan and import helpers, formatting (tests in tests/core)
 src/
-  api.ts             typed backend client, same contract as the app
-  store.tsx          session, preferences, data domains, hash routing, toasts
-  analytics.ts       ranges, totals, buckets, breakdowns, sankey, heatmap, yoy
-  charts.tsx         Recharts wrappers bound to the design tokens
-  ui.tsx             section, stat, animated number, delta, modal, controls
-  styles.css         tokens and layout
-  components/        top bar + quick add, editors
-  pages/             home, activity, accounts, budgets, plan, insights, settings, login
-public/
-  manifest.webmanifest, sw.js   PWA shell (the API is never cached)
+  store.tsx      session, data, hash routing, preferences
+  pages/         Today, Activity, Plan, Insights, Import, Settings, AccountDetail, Login
+  components/    navigation and quick add, editors, entry list
+  charts.tsx     chart wrappers on the design tokens
+  styles.css     tokens and layout
+public/          manifest, icons and the service worker (the API is never cached)
 ```
 
-Reports add up in the base currency: each transaction carries the value it had in CHF
-when it was booked. Balance history is reconstructed by undoing transactions backwards
-from today, because the API stores current balances rather than historical ones.
+`scripts/sync-core.sh` copies `core/` into a sumry-app checkout so both clients share one
+contract. Reports add up in the base currency: each entry carries its value in the base
+currency at booking time. Pushes to `main` publish `ghcr.io/elyesghazel/sumry-frontend:latest`.
+
+Contributions follow the backend's [CONTRIBUTING.md](https://github.com/elyesghazel/sumry-backend/blob/main/CONTRIBUTING.md);
+security reports go through its [SECURITY.md](https://github.com/elyesghazel/sumry-backend/blob/main/SECURITY.md).
+
+## License
+
+AGPL-3.0. If you run a modified Sumry as a service for others, you share your changes. See
+[LICENSE](LICENSE).
+
+<div align="right"><a href="#readme-top">back to top ↑</a></div>
