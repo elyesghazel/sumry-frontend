@@ -10,6 +10,7 @@ import {
 } from 'react';
 import {
   ApiError,
+  checksCredentials,
   type Account,
   type Budget,
   type BudgetProgress,
@@ -27,7 +28,7 @@ import {
   type Transaction,
   type Timeframe,
 } from '../core';
-import { api } from './api';
+import { api, onUnauthorized } from './api';
 
 const TOKEN_KEY = 'sumry.token';
 const THEME_KEY = 'sumry.theme';
@@ -45,6 +46,8 @@ type Ctx = {
   /** Plan, limits and aiEnabled; null until loaded or on a backend without /users/me. */
   profile: Profile | null;
   token: string | null;
+  /** Why the last session ended on its own, e.g. "You were signed out."; shown on the sign-in screen. */
+  signedOutReason: string | null;
 
   accounts: Account[];
   categories: Category[];
@@ -98,6 +101,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<Me | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [signedOutReason, setSignedOutReason] = useState<string | null>(null);
+  // The live token, readable synchronously by the 401 listener and by late callbacks.
+  const tokenRef = useRef<string | null>(null);
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -163,6 +169,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const toastTimer = useRef<number | null>(null);
   const toast = useCallback((message: string) => {
+    // Pages still finishing a request after the session ended have nothing to say.
+    if (!tokenRef.current) return;
     setToastMsg(message);
     if (toastTimer.current) window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToastMsg(null), 2600);
@@ -170,14 +178,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const clear = useCallback(() => {
     try { localStorage.removeItem(TOKEN_KEY); } catch { /* private mode */ }
+    tokenRef.current = null;
     setToken(null);
     setUser(null);
     setProfile(null);
     setAccounts([]); setCategories([]); setTransactions([]); setBudgets([]); setProgress([]);
     setPlanned([]); setUpcoming([]); setSafe(null); setGoals([]); setRules([]);
     setForecast(null); setSubscriptions(null); setPreferences(null);
+    setToastMsg(null);
     setStatus('signed-out');
   }, []);
+
+  // Any 401 for the live token means the session is gone (revoked, locked, expired):
+  // back to the sign-in screen instead of a toast over empty lists.
+  useEffect(
+    () =>
+      onUnauthorized((path, info) => {
+        const t = tokenRef.current;
+        if (!t || info.token !== t) return;
+        if (checksCredentials(path, info.method)) {
+          // A wrong password answers 401 too. Ask the server whether the session still
+          // holds; if not, that answer comes back through here and ends it.
+          api.me(t).catch(() => undefined);
+          return;
+        }
+        clear();
+        setSignedOutReason('You were signed out.');
+      }),
+    [clear],
+  );
 
   const load = useCallback(
     async (t: string, only?: Domain[]) => {
@@ -253,6 +282,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       try {
         const me = await api.me(storedToken!);
         if (cancelled) return;
+        tokenRef.current = storedToken;
         setToken(storedToken);
         setUser(me);
         setStatus('signed-in');
@@ -261,8 +291,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         // Only a rejected session signs out. Without a connection (or with the server down)
         // the token is kept, so opening the home-screen app offline does not log you out.
-        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) clear();
-        else setStatus('offline');
+        if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+          clear();
+          setSignedOutReason('You were signed out.');
+        } else setStatus('offline');
       }
     })();
     return () => {
@@ -272,6 +304,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const adoptToken = useCallback((t: string) => {
     try { localStorage.setItem(TOKEN_KEY, t); } catch { /* private mode */ }
+    tokenRef.current = t;
+    setSignedOutReason(null);
     setToken(t);
   }, []);
 
@@ -311,7 +345,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<Ctx>(
     () => ({
-      status, user, profile, token,
+      status, user, profile, token, signedOutReason,
       accounts, categories, transactions, budgets, progress, planned, upcoming, safe, goals, rules,
       forecast, subscriptions, preferences,
       loading, error,
@@ -320,7 +354,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       signIn, signOut, adoptToken, refresh, toast,
     }),
     [
-      status, user, profile, token, accounts, categories, transactions, budgets, progress, planned, upcoming, safe,
+      status, user, profile, token, signedOutReason, accounts, categories, transactions, budgets, progress, planned, upcoming, safe,
       goals, rules, forecast, subscriptions, preferences, loading, error, theme, setTheme, density,
       setDensity, privacy, setPrivacy, timeframe, setTimeframe, signIn, signOut, adoptToken, refresh, toast,
     ],

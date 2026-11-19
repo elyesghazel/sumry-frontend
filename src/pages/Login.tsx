@@ -21,7 +21,7 @@ function inviteFromUrl(): string {
 }
 
 export function Login() {
-  const { signIn } = useStore();
+  const { signIn, signedOutReason } = useStore();
   const [initialInvite] = useState(inviteFromUrl);
   const [mode, setMode] = useState<RegistrationMode>('closed');
   const [signup, setSignup] = useState(initialInvite !== '');
@@ -106,6 +106,7 @@ export function Login() {
               </span>
             </label>
           ) : null}
+          {signedOutReason && !error ? <p className="small muted" role="status">{signedOutReason}</p> : null}
           <ErrorLine>{error}</ErrorLine>
           <button className="btn primary" type="submit" disabled={busy || !ready} style={{ padding: '11px 16px' }}>
             {showSignup ? (busy ? 'Creating account…' : 'Create account') : (busy ? 'Signing in…' : 'Sign in')}
