@@ -511,7 +511,7 @@ function PlanSettings() {
             </ul>
             <p className="small muted" style={{ marginTop: 6 }}>Unlimited accounts, statement import (PDF, camt.053, CSV) and the monthly statement by email.</p>
           </div>
-          <p className="small muted" style={{ marginTop: 12 }}>Payment is by TWINT for now, not in the app. Contact whoever runs this Sumry instance; they switch your account over once it's paid.</p>
+          <p className="small muted" style={{ marginTop: 12 }}>Payment is by TWINT or PayPal for now, not in the app. No subscription. Contact whoever runs this Sumry instance; they switch your account over once it's paid.</p>
         </Section>
       )}
     </div>
