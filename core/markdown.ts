@@ -180,6 +180,9 @@ export const LEGAL_DOCS: Record<LegalDoc, { path: string; file: string; label: s
   imprint: { path: '/imprint', file: '/legal/imprint.md', label: 'Imprint' },
 };
 
+/** Optional payment details for Premium, shown on the Plan tab under "How to pay". */
+export const PREMIUM_FILE = '/legal/premium.md';
+
 /**
  * A served file counts only if it is a real 200 and not an HTML page: a dev server or an
  * SPA fallback answers missing paths with index.html, which must not show up as a policy.
