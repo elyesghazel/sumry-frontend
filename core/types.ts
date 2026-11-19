@@ -439,6 +439,12 @@ export type FxRates = { base: string; rates: Record<string, number>; fetchedAt: 
 
 export type Me = { id: string; username: string; email: string };
 
+/** Who may create an account on the instance: nobody, invite holders, or anyone. */
+export type RegistrationMode = 'closed' | 'invite' | 'open';
+
+/** Public instance settings, readable before sign-in. */
+export type PublicConfig = { registrationMode: RegistrationMode };
+
 export type Session = { token: string; email: string };
 
 export type ShortcutToken = { token: string; expiresAt: string };
