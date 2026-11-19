@@ -6,7 +6,7 @@ import {
   type Rule,
   type RuleApplyResult,
   type ShortcutToken,
-  PREMIUM_OFFER,
+  PREMIUM_PRICES,
   blockedBy,
   formatAmount,
   formatLongDate,
@@ -498,10 +498,16 @@ function PlanSettings() {
       {premium ? null : (
         <Section span="span-6" title="Premium">
           <div className="plan-offer">
-            <div className="serif" style={{ fontSize: 18 }}>{PREMIUM_OFFER}</div>
-            <p className="small muted" style={{ marginTop: 6 }}>No subscription. Unlimited accounts, statement import (PDF, camt.053, CSV) and the monthly statement by email.</p>
+            <ul className="plan-prices">
+              {PREMIUM_PRICES.map((p) => (
+                <li key={p.label}>
+                  <span className="muted">{p.label}</span> <span className="serif">{p.price}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="small muted" style={{ marginTop: 6 }}>Unlimited accounts, statement import (PDF, camt.053, CSV) and the monthly statement by email.</p>
           </div>
-          <p className="small muted" style={{ marginTop: 12 }}>Payment is not built into the app yet. To unlock Premium, contact whoever runs this Sumry instance; they can switch your account over.</p>
+          <p className="small muted" style={{ marginTop: 12 }}>Payment is by TWINT for now, not in the app. Contact whoever runs this Sumry instance; they switch your account over once it's paid.</p>
         </Section>
       )}
     </div>
