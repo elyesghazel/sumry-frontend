@@ -466,6 +466,7 @@ function AccountSettings() {
           <ErrorLine>{error}</ErrorLine>
         </div>
       </Section>
+      <DeleteAccount />
     </div>
   );
 }
@@ -504,5 +505,48 @@ function PlanSettings() {
         </Section>
       )}
     </div>
+  );
+}
+
+function DeleteAccount() {
+  const { user, token, signOut } = useStore();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const close = () => { if (!busy) { setOpen(false); setPassword(''); setError(null); } };
+
+  const remove = async () => {
+    if (!token || !password) return;
+    setBusy(true); setError(null);
+    try {
+      await api.deleteMe(token, password);
+      // The token died with the account; signing out only clears this device.
+      await signOut(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete the account');
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Section span="span-6" title="Delete account">
+      <p className="small muted">Removes your account and everything in it: accounts, entries, budgets, plans, goals and rules. This cannot be undone.</p>
+      <p className="small muted" style={{ marginTop: 8 }}>Want a copy first? Download it under <a className="link" href={href('settings', { tab: 'data' })}>Import &amp; export</a>.</p>
+      <div style={{ marginTop: 14 }}><button className="btn danger" onClick={() => setOpen(true)}>Delete account…</button></div>
+      {open ? (
+        <Modal title="Delete account" onClose={close} footer={<>
+          <button className="btn danger" onClick={remove} disabled={busy || !password}>{busy ? 'Deleting…' : 'Delete everything'}</button>
+          <button className="btn ghost" onClick={close} disabled={busy}>Cancel</button>
+        </>}>
+          <p className="small muted">This deletes <strong>{user?.email}</strong> and all its data on this instance, and signs out every device. Enter your password to confirm.</p>
+          <form onSubmit={(e) => { e.preventDefault(); remove(); }}>
+            <Field label="Password"><input className="input" type="password" autoComplete="current-password" autoFocus value={password} onChange={(e) => setPassword(e.target.value)} /></Field>
+          </form>
+          <ErrorLine>{error}</ErrorLine>
+        </Modal>
+      ) : null}
+    </Section>
   );
 }
